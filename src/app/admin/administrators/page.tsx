@@ -12,6 +12,7 @@ export default function AdministratorsPage(){
   useEffect(() => { if(token) fetchAdmins() }, [token])
 
   async function fetchAdmins(){
+    if (!token) return
     try{
       const res = await usersAPI.getAll(token, { role: 'admin', limit: 100 })
       const data = res.data?.users || res.data || res
@@ -20,6 +21,7 @@ export default function AdministratorsPage(){
   }
 
   async function changeRole(id: string, role: string){
+    if (!token) return
     try{
       await usersAPI.update(token, id, { role })
       fetchAdmins()

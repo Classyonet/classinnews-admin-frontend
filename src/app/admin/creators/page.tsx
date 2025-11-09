@@ -29,6 +29,7 @@ export default function CreatorsPage() {
   }, [token])
 
   async function fetchCreators() {
+    if (!token) return
     setLoading(true)
     try {
       const res = await usersAPI.getAll(token, { role: 'creator', limit: 100 })

@@ -92,8 +92,9 @@ export default function ArticlesPage() {
   };
 
   const handleStatusChange = async (articleId: string, newStatus: string) => {
+    if (!token) return
     try {
-      await articlesAPI.updateStatus(token!, articleId, newStatus);
+      await articlesAPI.updateStatus(token, articleId, newStatus);
       fetchArticles(); // Refresh the list
     } catch (error) {
       console.error('Failed to update article status:', error);

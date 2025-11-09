@@ -85,6 +85,7 @@ function SubscribersTab() {
   }, [page]);
 
   const fetchStats = async () => {
+    if (!token) return
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/notifications/subscribers/stats`, {
         headers: {
@@ -101,6 +102,7 @@ function SubscribersTab() {
   };
 
   const fetchSubscribers = async () => {
+    if (!token) return
     try {
       setLoading(true);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/notifications/subscribers?status=active&page=${page}&limit=10`, {
@@ -581,8 +583,9 @@ export default function SystemSettingsPage() {
   }, [token, activeTab]);
 
   const fetchActivityLogs = async () => {
+    if (!token) return
     try {
-      const response = await settingsAPI.getActivityLogs(token!, { limit: 20 });
+      const response = await settingsAPI.getActivityLogs(token, { limit: 20 });
       const logs = response.data?.logs || response.data || [];
       setActivityLogs(Array.isArray(logs) ? logs : []);
     } catch (error) {
@@ -700,7 +703,7 @@ export default function SystemSettingsPage() {
       for (const [key, value] of Object.entries(settings)) {
         const meta = settingTypes[key] ?? { type: 'string', category: 'general' };
         
-        const savePromise = settingsAPI.update(token!, key, { 
+        const savePromise = settingsAPI.update(token, key, { 
           value: String(value),
           type: meta.type,
           category: meta.category

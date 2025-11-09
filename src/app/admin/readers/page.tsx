@@ -74,8 +74,9 @@ export default function ReadersPage() {
   };
 
   const handleStatusToggle = async (readerId: string, isActive: boolean) => {
+    if (!token) return
     try {
-      await usersAPI.update(token!, readerId, { isActive });
+      await usersAPI.update(token, readerId, { isActive });
       fetchReaders(); // Refresh the list
     } catch (error) {
       console.error('Failed to update reader status:', error);

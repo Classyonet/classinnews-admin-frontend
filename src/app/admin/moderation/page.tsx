@@ -37,8 +37,9 @@ export default function ModerationPage() {
   }, []);
 
   const fetchPendingArticles = async () => {
+    if (!token) return
     try {
-      const response = await articlesAPI.getAll(token!, { status: 'pending_review' });
+      const response = await articlesAPI.getAll(token, { status: 'pending_review' });
       // Backend returns { success: true, data: { articles: [], pagination: {} } }
       setPendingArticles(response.data?.articles || []);
     } catch (error) {
@@ -50,8 +51,9 @@ export default function ModerationPage() {
   };
 
   const fetchStats = async () => {
+    if (!token) return
     try {
-      const response = await moderationAPI.getStats(token!);
+      const response = await moderationAPI.getStats(token);
       setStats(response.data);
     } catch (error) {
       console.error('Failed to fetch moderation stats:', error);
@@ -59,8 +61,9 @@ export default function ModerationPage() {
   };
 
   const handleApprove = async (articleId: string) => {
+    if (!token) return
     try {
-      await articlesAPI.updateStatus(token!, articleId, 'published'); // lowercase enum value
+      await articlesAPI.updateStatus(token, articleId, 'published'); // lowercase enum value
       fetchPendingArticles();
       fetchStats();
     } catch (error) {
@@ -70,8 +73,9 @@ export default function ModerationPage() {
   };
 
   const handleReject = async (articleId: string) => {
+    if (!token) return
     try {
-      await articlesAPI.updateStatus(token!, articleId, 'rejected'); // lowercase enum value
+      await articlesAPI.updateStatus(token, articleId, 'rejected'); // lowercase enum value
       fetchPendingArticles();
       fetchStats();
     } catch (error) {
@@ -81,8 +85,9 @@ export default function ModerationPage() {
   };
 
   const handleViewArticle = async (articleId: string) => {
+    if (!token) return
     try {
-      const response = await articlesAPI.getById(token!, articleId);
+      const response = await articlesAPI.getById(token, articleId);
       setSelectedArticle(response.data || response);
       setShowPreview(true);
     } catch (error) {

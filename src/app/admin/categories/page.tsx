@@ -39,8 +39,9 @@ export default function CategoriesPage() {
   }, []);
 
   const fetchCategories = async () => {
+    if (!token) return
     try {
-      const response = await categoriesAPI.getAll(token!);
+      const response = await categoriesAPI.getAll(token);
       console.log('Categories API response:', response);
       // Handle nested response structure
       const categoriesData = response.data || response;
@@ -72,11 +73,12 @@ export default function CategoriesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!token) return
     try {
       if (editingCategory) {
-        await categoriesAPI.update(token!, editingCategory.id, formData);
+        await categoriesAPI.update(token, editingCategory.id, formData);
       } else {
-        await categoriesAPI.create(token!, formData);
+        await categoriesAPI.create(token, formData);
       }
       setShowModal(false);
       fetchCategories();
@@ -87,9 +89,10 @@ export default function CategoriesPage() {
 
   const handleDelete = async (categoryId: string) => {
     if (!confirm('Are you sure you want to delete this category?')) return;
+    if (!token) return
     
     try {
-      await categoriesAPI.delete(token!, categoryId);
+      await categoriesAPI.delete(token, categoryId);
       fetchCategories();
     } catch (error) {
       console.error('Failed to delete category:', error);
