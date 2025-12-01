@@ -1,5 +1,6 @@
 // Prefer the standard NEXT_PUBLIC_API_URL for compatibility, fall back to the admin-specific
-const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:3002';
+const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:3002';
+const API_URL = RAW_API_URL.replace(/\/+$/,'');
 
 interface ApiFetchOptions extends RequestInit {
   token?: string;
@@ -17,7 +18,9 @@ async function apiFetch(endpoint: string, options: ApiFetchOptions = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
+  const base = API_URL;
+  const path = endpoint.startsWith('/api') && base.endsWith('/api') ? endpoint.replace(/^\/api/, '') : endpoint;
+  const response = await fetch(`${base}${path}`, {
     ...fetchOptions,
     headers,
   });
