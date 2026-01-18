@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "classinnews"
+  },
+  "targets": {
+    "classinnews": {
+      "hosting": {
+        "admin": [
+          "classinnews-admin"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
