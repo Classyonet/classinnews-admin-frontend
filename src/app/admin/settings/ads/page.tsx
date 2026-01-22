@@ -37,6 +37,17 @@ export default function AdsSettingsPage() {
   const [selectedTab, setSelectedTab] = useState<'all' | 'homepage' | 'article'>('all');
   const [editingAd, setEditingAd] = useState<AdPlacement | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newAd, setNewAd] = useState({
+    placement_name: '',
+    display_name: '',
+    page_type: 'homepage',
+    position: 'top',
+    width: '728px',
+    height: '90px',
+    ad_type: 'code',
+    is_active: false
+  });
 
   useEffect(() => {
     fetchAds();
@@ -47,9 +58,18 @@ export default function AdsSettingsPage() {
     try {
       const response = await fetch('http://localhost:3002/api/ads');
       const data = await response.json();
-      setAds(data);
+      // Ensure data is an array
+      if (Array.isArray(data)) {
+        setAds(data);
+      } else if (data.error) {
+        console.error('API error:', data.error);
+        setAds([]);
+      } else {
+        setAds([]);
+      }
     } catch (error) {
       console.error('Error fetching ads:', error);
+      setAds([]);
     } finally {
       setLoading(false);
     }
@@ -59,9 +79,15 @@ export default function AdsSettingsPage() {
     try {
       const response = await fetch('http://localhost:3002/api/ads/stats/summary');
       const data = await response.json();
-      setStats(data);
+      // Ensure we have valid stats object
+      if (data && !data.error && typeof data.total !== 'undefined') {
+        setStats(data);
+      } else {
+        setStats({ total: 0, active: 0, homepage_ads: 0, article_ads: 0 });
+      }
     } catch (error) {
       console.error('Error fetching stats:', error);
+      setStats({ total: 0, active: 0, homepage_ads: 0, article_ads: 0 });
     }
   };
 
@@ -114,6 +140,60 @@ export default function AdsSettingsPage() {
     }
   };
 
+  const createAd = async () => {
+    try {
+      const response = await fetch('http://localhost:3002/api/ads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newAd),
+      });
+
+      if (response.ok) {
+        setShowCreateModal(false);
+        setNewAd({
+          placement_name: '',
+          display_name: '',
+          page_type: 'homepage',
+          position: 'top',
+          width: '728px',
+          height: '90px',
+          ad_type: 'code',
+          is_active: false
+        });
+        fetchAds();
+        fetchStats();
+        alert('Ad placement created successfully!');
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to create ad placement');
+      }
+    } catch (error) {
+      console.error('Error creating ad:', error);
+      alert('Failed to create ad placement');
+    }
+  };
+
+  const deleteAd = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this ad placement?')) return;
+
+    try {
+      const response = await fetch(`http://localhost:3002/api/ads/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        fetchAds();
+        fetchStats();
+        alert('Ad placement deleted successfully!');
+      }
+    } catch (error) {
+      console.error('Error deleting ad:', error);
+      alert('Failed to delete ad placement');
+    }
+  };
+
   const filteredAds = ads.filter(ad => {
     const matchesSearch = ad.display_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTab = selectedTab === 'all' || ad.page_type === selectedTab;
@@ -150,9 +230,18 @@ export default function AdsSettingsPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Advertisement Settings</h1>
-          <p className="text-gray-600">Manage ad placements for homepage and article pages</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Advertisement Settings</h1>
+            <p className="text-gray-600">Manage ad placements for homepage and article pages</p>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Create New Ad Placement
+          </button>
         </div>
 
         {/* Stats Cards */}
@@ -308,6 +397,16 @@ export default function AdsSettingsPage() {
                     >
                       <Code2 className="w-4 h-4" />
                       {editingAd?.id === ad.id ? 'Close Editor' : 'Edit Ad Code'}
+                    </button>
+
+                    <button
+                      onClick={() => deleteAd(ad.id)}
+                      className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                      title="Delete Ad Placement"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
                     </button>
                   </div>
                 </div>
@@ -538,6 +637,184 @@ export default function AdsSettingsPage() {
         {filteredAds.length === 0 && (
           <div className="text-center py-12 bg-white rounded-lg shadow">
             <p className="text-gray-500">No ad placements found matching your criteria.</p>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Create Your First Ad Placement
+            </button>
+          </div>
+        )}
+
+        {/* Create Ad Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">Create New Ad Placement</h2>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Display Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={newAd.display_name}
+                      onChange={(e) => setNewAd({ ...newAd, display_name: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., Homepage Top Banner"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Placement Name * (unique)
+                    </label>
+                    <input
+                      type="text"
+                      value={newAd.placement_name}
+                      onChange={(e) => setNewAd({ ...newAd, placement_name: e.target.value.toLowerCase().replace(/\s+/g, '_') })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., homepage_top_banner"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Page Type *
+                    </label>
+                    <select
+                      value={newAd.page_type}
+                      onChange={(e) => setNewAd({ ...newAd, page_type: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="homepage">Homepage</option>
+                      <option value="article">Article Page</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Position *
+                    </label>
+                    <select
+                      value={newAd.position}
+                      onChange={(e) => setNewAd({ ...newAd, position: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="top">Top Banner</option>
+                      <option value="sidebar_top">Sidebar Top</option>
+                      <option value="sidebar_middle">Sidebar Middle</option>
+                      <option value="sidebar_bottom">Sidebar Bottom</option>
+                      <option value="content_top">Content Top</option>
+                      <option value="content_bottom">Content Bottom</option>
+                      <option value="inline_1">Inline 1</option>
+                      <option value="inline_2">Inline 2</option>
+                      <option value="bottom">Bottom Banner</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Width
+                    </label>
+                    <input
+                      type="text"
+                      value={newAd.width}
+                      onChange={(e) => setNewAd({ ...newAd, width: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., 728px, 100%, auto"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Height
+                    </label>
+                    <input
+                      type="text"
+                      value={newAd.height}
+                      onChange={(e) => setNewAd({ ...newAd, height: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., 90px, auto"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ad Type
+                  </label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="code"
+                        checked={newAd.ad_type === 'code'}
+                        onChange={(e) => setNewAd({ ...newAd, ad_type: e.target.value })}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="text-sm text-gray-700">HTML/JavaScript Code</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="image"
+                        checked={newAd.ad_type === 'image'}
+                        onChange={(e) => setNewAd({ ...newAd, ad_type: e.target.value })}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="text-sm text-gray-700">Image Banner</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={newAd.is_active}
+                    onChange={(e) => setNewAd({ ...newAd, is_active: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <label className="text-sm text-gray-700">
+                    Activate immediately after creation
+                  </label>
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-gray-200 flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={createAd}
+                  disabled={!newAd.placement_name || !newAd.display_name}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Create Ad Placement
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

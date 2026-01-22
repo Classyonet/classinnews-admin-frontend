@@ -531,6 +531,9 @@ export default function SystemSettingsPage() {
     emailNotifications: 'true',
     trending_topics_auto_delete: 'true',
     trending_topics_retention_days: '2',
+    // Site branding
+    site_logo_url: '',
+    site_favicon_url: '',
     // homepage carousel settings
     homepage_carousel_enabled: 'false',
     homepage_carousel_interval: '5',
@@ -572,6 +575,9 @@ export default function SystemSettingsPage() {
   const [layoutSuccess, setLayoutSuccess] = useState('');
   const [layoutError, setLayoutError] = useState('');
   const [wordSuccess, setWordSuccess] = useState('');
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingFavicon, setUploadingFavicon] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState('');
 
   useEffect(() => {
     fetchActivityLogs();
@@ -684,6 +690,8 @@ export default function SystemSettingsPage() {
     emailNotifications: { type: 'boolean', category: 'general' },
     trending_topics_auto_delete: { type: 'boolean', category: 'general' },
     trending_topics_retention_days: { type: 'number', category: 'general' },
+    site_logo_url: { type: 'string', category: 'general' },
+    site_favicon_url: { type: 'string', category: 'general' },
     homepage_carousel_enabled: { type: 'boolean', category: 'homepage' },
     homepage_carousel_interval: { type: 'number', category: 'homepage' },
     homepage_carousel_effect: { type: 'string', category: 'homepage' },
@@ -802,6 +810,120 @@ export default function SystemSettingsPage() {
     }
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setUploadMessage('Please select an image file');
+      setTimeout(() => setUploadMessage(''), 3000);
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadMessage('File size must be less than 5MB');
+      setTimeout(() => setUploadMessage(''), 3000);
+      return;
+    }
+
+    setUploadingLogo(true);
+    setUploadMessage('');
+
+    try {
+      const formData = new FormData();
+      formData.append('logo', file);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/upload/logo`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSettings({ ...settings, site_logo_url: data.data.path });
+        setUploadMessage('Logo uploaded successfully!');
+        setTimeout(() => setUploadMessage(''), 3000);
+        
+        // Refresh settings to get the new path
+        fetchSettings();
+      } else {
+        setUploadMessage(data.message || 'Upload failed');
+        setTimeout(() => setUploadMessage(''), 5000);
+      }
+    } catch (error: any) {
+      console.error('Logo upload error:', error);
+      setUploadMessage('Failed to upload logo');
+      setTimeout(() => setUploadMessage(''), 5000);
+    } finally {
+      setUploadingLogo(false);
+      // Reset file input
+      e.target.value = '';
+    }
+  };
+
+  const handleFaviconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setUploadMessage('Please select an image file');
+      setTimeout(() => setUploadMessage(''), 3000);
+      return;
+    }
+
+    // Validate file size (2MB max for favicon)
+    if (file.size > 2 * 1024 * 1024) {
+      setUploadMessage('Favicon size must be less than 2MB');
+      setTimeout(() => setUploadMessage(''), 3000);
+      return;
+    }
+
+    setUploadingFavicon(true);
+    setUploadMessage('');
+
+    try {
+      const formData = new FormData();
+      formData.append('favicon', file);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/upload/favicon`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSettings({ ...settings, site_favicon_url: data.data.path });
+        setUploadMessage('Favicon uploaded successfully!');
+        setTimeout(() => setUploadMessage(''), 3000);
+        
+        // Refresh settings to get the new path
+        fetchSettings();
+      } else {
+        setUploadMessage(data.message || 'Upload failed');
+        setTimeout(() => setUploadMessage(''), 5000);
+      }
+    } catch (error: any) {
+      console.error('Favicon upload error:', error);
+      setUploadMessage('Failed to upload favicon');
+      setTimeout(() => setUploadMessage(''), 5000);
+    } finally {
+      setUploadingFavicon(false);
+      // Reset file input
+      e.target.value = '';
+    }
+  };
+
   const activeWords = words.filter(w => w.isActive);
   const inactiveWords = words.filter(w => !w.isActive);
 
@@ -884,6 +1006,18 @@ export default function SystemSettingsPage() {
             >
               Topics Settings
             </button>
+            <button
+              onClick={() => window.location.href = '/admin/settings/earnings'}
+              className="px-4 py-3 font-semibold text-sm transition-all duration-300 border-b-4 border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
+            >
+              Earnings Settings
+            </button>
+            <button
+              onClick={() => window.location.href = '/admin/settings/rating'}
+              className="px-4 py-3 font-semibold text-sm transition-all duration-300 border-b-4 border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
+            >
+              Rating Settings
+            </button>
           </div>
 
           {/* Site Settings Sub-tab Content */}
@@ -907,6 +1041,94 @@ export default function SystemSettingsPage() {
                   onChange={(e) => setSettings({ ...settings, siteDescription: e.target.value })}
                   className="border-slate-200 focus:border-purple-500 focus:ring-purple-500"
                 />
+              </div>
+
+              {/* Logo Settings */}
+              <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 space-y-4">
+                <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-blue-600" />
+                  Site Branding
+                </h4>
+
+                {uploadMessage && (
+                  <div className={`p-3 rounded-lg ${uploadMessage.includes('success') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {uploadMessage}
+                  </div>
+                )}
+                
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Site Logo</label>
+                  <div className="flex items-start gap-4">
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        disabled={uploadingLogo}
+                        className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 disabled:opacity-50"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Upload your logo (PNG, JPG, SVG - max 5MB, recommended: 200x50px)
+                      </p>
+                    </div>
+                    {uploadingLogo && (
+                      <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                    )}
+                  </div>
+                  {settings.site_logo_url && (
+                    <div className="mt-3 p-3 bg-white rounded-lg border border-slate-200">
+                      <p className="text-xs font-semibold text-slate-600 mb-2">Current Logo:</p>
+                      <img 
+                        src={`http://localhost:3006${settings.site_logo_url}`}
+                        alt="Logo Preview" 
+                        className="h-12 object-contain"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.alt = '❌ Failed to load logo';
+                          target.className = 'text-red-500 text-xs';
+                        }}
+                      />
+                      <p className="text-xs text-slate-500 mt-1">{settings.site_logo_url}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Site Favicon</label>
+                  <div className="flex items-start gap-4">
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*,.ico"
+                        onChange={handleFaviconUpload}
+                        disabled={uploadingFavicon}
+                        className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 disabled:opacity-50"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Upload favicon (ICO, PNG - max 2MB, recommended: 32x32px)
+                      </p>
+                    </div>
+                    {uploadingFavicon && (
+                      <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                    )}
+                  </div>
+                  {settings.site_favicon_url && (
+                    <div className="mt-3 p-3 bg-white rounded-lg border border-slate-200">
+                      <p className="text-xs font-semibold text-slate-600 mb-2">Current Favicon:</p>
+                      <img 
+                        src={`http://localhost:3006${settings.site_favicon_url}`}
+                        alt="Favicon Preview" 
+                        className="h-8 w-8 object-contain"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.alt = '❌ Failed to load favicon';
+                          target.className = 'text-red-500 text-xs';
+                        }}
+                      />
+                      <p className="text-xs text-slate-500 mt-1">{settings.site_favicon_url}</p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>

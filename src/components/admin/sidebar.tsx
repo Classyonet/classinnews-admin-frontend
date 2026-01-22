@@ -14,6 +14,7 @@ import {
   Settings,
   BookOpen,
   TrendingUp,
+  DollarSign,
 } from 'lucide-react';
 
 const navigation = [
@@ -23,6 +24,7 @@ const navigation = [
   { name: 'Administrators', href: '/admin/administrators', icon: Shield, notificationKey: 'administrators' },
   { name: 'Articles', href: '/admin/articles', icon: FileText, notificationKey: 'articles' },
   { name: 'Moderation', href: '/admin/moderation', icon: Shield, notificationKey: 'moderation', showBadge: true },
+  { name: 'Withdrawals', href: '/admin/withdrawals', icon: DollarSign, notificationKey: 'withdrawals', showBadge: true },
   { name: 'Trending Topics', href: '/admin/trending-topics', icon: TrendingUp, notificationKey: 'trending' },
   { name: 'Analytics', href: '/admin/analytics', icon: BarChart3, notificationKey: 'analytics' },
   { name: 'Categories', href: '/admin/categories', icon: FolderTree, notificationKey: 'categories' },
@@ -36,32 +38,41 @@ export default function AdminSidebar() {
     articles: 0,
     creators: 0,
     readers: 0,
+    withdrawals: 0,
   });
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
 
   useEffect(() => {
     // Fetch notification counts
     const fetchNotifications = async () => {
       try {
         // Fetch pending moderation count
-        const moderationRes = await fetch('http://localhost:3001/api/moderation/pending-count');
+        const moderationRes = await fetch(`${API_URL}/api/moderation/pending-count`);
         if (!moderationRes.ok) throw new Error('Failed to fetch moderation count');
         const moderationData = await moderationRes.json();
         
         // Fetch pending articles count
-        const articlesRes = await fetch('http://localhost:3001/api/articles/pending-count');
+        const articlesRes = await fetch(`${API_URL}/api/articles/pending-count`);
         if (!articlesRes.ok) throw new Error('Failed to fetch articles count');
         const articlesData = await articlesRes.json();
         
         // Fetch new users awaiting approval
-        const usersRes = await fetch('http://localhost:3001/api/users/pending-count');
+        const usersRes = await fetch(`${API_URL}/api/users/pending-count`);
         if (!usersRes.ok) throw new Error('Failed to fetch users count');
         const usersData = await usersRes.json();
+
+        // Fetch pending withdrawals count
+        const withdrawalsRes = await fetch(`${API_URL}/api/withdrawals?status=pending`);
+        const withdrawalsData = await withdrawalsRes.json();
+        const withdrawalsCount = withdrawalsData.success ? withdrawalsData.data.withdrawals.length : 0;
 
         console.log('Notification counts:', {
           moderation: moderationData.count,
           articles: articlesData.count,
           creators: usersData.creators,
-          readers: usersData.readers
+          readers: usersData.readers,
+          withdrawals: withdrawalsCount
         });
 
         setNotificationCounts({
@@ -69,6 +80,7 @@ export default function AdminSidebar() {
           articles: articlesData.count || 0,
           creators: usersData.creators || 0,
           readers: usersData.readers || 0,
+          withdrawals: withdrawalsCount || 0,
         });
       } catch (error) {
         console.error('Failed to fetch notification counts:', error);
