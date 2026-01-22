@@ -4,7 +4,20 @@ const nextConfig = {
   trailingSlash: true,
   images: {
     unoptimized: true,
-    domains: ['localhost'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+    ],
+  },
+  // Cloudflare Pages compatibility
+  experimental: {
+    runtime: 'edge',
   },
 }
 

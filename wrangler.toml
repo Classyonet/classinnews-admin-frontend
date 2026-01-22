@@ -1,0 +1,8 @@
+# Cloudflare Pages Configuration
+name = "classinnews-admin"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "out"
+
+# Environment variables (can also be set in Cloudflare Dashboard)
+# [vars]
+# NEXT_PUBLIC_API_URL = "https://classinnews-admin-backend.onrender.com"
