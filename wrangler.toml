@@ -1,8 +1,8 @@
-# Cloudflare Pages Configuration
+# Cloudflare Pages Configuration for Next.js
 name = "classinnews-admin-frontend"
 compatibility_date = "2024-01-01"
-pages_build_output_dir = "out"
+compatibility_flags = ["nodejs_compat"]
 
-# Environment variables (can also be set in Cloudflare Dashboard)
+# Environment variables (set in Cloudflare Dashboard)
 # [vars]
 # NEXT_PUBLIC_API_URL = "https://classinnews-admin-backend.onrender.com"

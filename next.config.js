@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
-  trailingSlash: true,
   images: {
     unoptimized: true,
     remotePatterns: [
@@ -14,10 +12,6 @@ const nextConfig = {
         hostname: 'localhost',
       },
     ],
-  },
-  // Cloudflare Pages compatibility
-  experimental: {
-    runtime: 'edge',
   },
 }
 
