@@ -25,14 +25,14 @@ interface CommissionSetting {
   isActive: boolean;
 }
 
-// Tier configuration for display
+// Tier configuration for display with default commission rates
 const tierConfig = [
-  { key: 'commission_new_tier', name: 'New', stars: 0, color: 'from-slate-400 to-slate-500', bgColor: 'bg-slate-50', borderColor: 'border-slate-200' },
-  { key: 'commission_starter_tier', name: 'Starter', stars: 1, color: 'from-amber-400 to-amber-500', bgColor: 'bg-amber-50', borderColor: 'border-amber-200' },
-  { key: 'commission_bronze_tier', name: 'Bronze', stars: 2, color: 'from-orange-400 to-orange-500', bgColor: 'bg-orange-50', borderColor: 'border-orange-200' },
-  { key: 'commission_silver_tier', name: 'Silver', stars: 3, color: 'from-slate-300 to-slate-400', bgColor: 'bg-slate-50', borderColor: 'border-slate-300' },
-  { key: 'commission_platinum_tier', name: 'Platinum', stars: 4, color: 'from-purple-400 to-purple-500', bgColor: 'bg-purple-50', borderColor: 'border-purple-200' },
-  { key: 'commission_gold_tier', name: 'Gold', stars: 5, color: 'from-yellow-400 to-yellow-500', bgColor: 'bg-yellow-50', borderColor: 'border-yellow-200' },
+  { key: 'commission_new_tier', name: 'New', stars: 0, defaultRate: '30', color: 'from-slate-400 to-slate-500', bgColor: 'bg-slate-50', borderColor: 'border-slate-200' },
+  { key: 'commission_starter_tier', name: 'Starter', stars: 1, defaultRate: '25', color: 'from-amber-400 to-amber-500', bgColor: 'bg-amber-50', borderColor: 'border-amber-200' },
+  { key: 'commission_bronze_tier', name: 'Bronze', stars: 2, defaultRate: '20', color: 'from-orange-400 to-orange-500', bgColor: 'bg-orange-50', borderColor: 'border-orange-200' },
+  { key: 'commission_silver_tier', name: 'Silver', stars: 3, defaultRate: '15', color: 'from-slate-300 to-slate-400', bgColor: 'bg-slate-50', borderColor: 'border-slate-300' },
+  { key: 'commission_platinum_tier', name: 'Platinum', stars: 4, defaultRate: '10', color: 'from-purple-400 to-purple-500', bgColor: 'bg-purple-50', borderColor: 'border-purple-200' },
+  { key: 'commission_gold_tier', name: 'Gold', stars: 5, defaultRate: '0', color: 'from-yellow-400 to-yellow-500', bgColor: 'bg-yellow-50', borderColor: 'border-yellow-200' },
 ];
 
 export default function CommissionSettingsPage() {
@@ -75,7 +75,10 @@ export default function CommissionSettingsPage() {
 
   const getSettingValue = (key: string): string => {
     const setting = settings.find(s => s.settingKey === key);
-    return setting?.settingValue || '0';
+    if (setting?.settingValue) return setting.settingValue;
+    // Return default value if not found in database
+    const tier = tierConfig.find(t => t.key === key);
+    return tier?.defaultRate || '0';
   };
 
   const updateSettingValue = (key: string, value: string) => {
