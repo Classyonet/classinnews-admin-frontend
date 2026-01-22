@@ -1,5 +1,7 @@
 'use client';
 
+export const runtime = 'edge';
+
 import { useState, useEffect } from 'react';
 import { Search, Plus, Power, PowerOff, Save, Eye, Code2, BarChart3 } from 'lucide-react';
 
