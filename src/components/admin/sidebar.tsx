@@ -19,7 +19,7 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard, notificationKey: 'dashboard' },
-  { name: 'Creators', href: '/admin/creators', icon: Users, notificationKey: 'creators' },
+  { name: 'Publishers', href: '/admin/creators', icon: Users, notificationKey: 'creators' },
   { name: 'Readers', href: '/admin/readers', icon: BookOpen, notificationKey: 'readers' },
   { name: 'Administrators', href: '/admin/administrators', icon: Shield, notificationKey: 'administrators' },
   { name: 'Articles', href: '/admin/articles', icon: FileText, notificationKey: 'articles' },
