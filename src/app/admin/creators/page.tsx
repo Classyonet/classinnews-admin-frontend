@@ -25,6 +25,15 @@ export default function CreatorsPage() {
   const [messageModalOpen, setMessageModalOpen] = useState(false)
   const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null)
   const [actionLoading, setActionLoading] = useState<string>('')
+  const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [createLoading, setCreateLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    email: '',
+    username: '',
+    password: '',
+    phoneNumber: '',
+    isVerified: true
+  })
 
   useEffect(() => {
     if (token) fetchCreators()
@@ -96,19 +105,51 @@ export default function CreatorsPage() {
     }
   }
 
+  async function handleCreatePublisher(e: React.FormEvent) {
+    e.preventDefault()
+    setCreateLoading(true)
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/creators`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create publisher')
+      }
+
+      toast.success('Publisher created successfully!')
+      setCreateModalOpen(false)
+      setFormData({ email: '', username: '', password: '', phoneNumber: '', isVerified: true })
+      fetchCreators()
+    } catch (err: any) {
+      console.error('Create error:', err)
+      toast.error(err.message || 'Failed to create publisher')
+    } finally {
+      setCreateLoading(false)
+    }
+  }
+
   async function handleMessageSend(subject: string, body: string) {
     if (!selectedCreator) {
       toast.error('No creator selected')
       return
     }
-    
+
     try {
       console.log('Sending message:', {
         toId: selectedCreator.id,
         subject: subject.trim(),
         body: body.trim()
       })
-      
+
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'
       const response = await fetch(`${apiUrl}/api/messages`, {
         method: 'POST',
@@ -123,14 +164,14 @@ export default function CreatorsPage() {
           fromRole: 'admin'
         })
       })
-      
+
       const data = await response.json()
       console.log('Message response:', data)
-      
+
       if (!response.ok) {
         throw new Error(data.message || 'Failed to send message')
       }
-      
+
       toast.success('Message sent successfully')
       setMessageModalOpen(false)
       setSelectedCreator(null)
@@ -147,6 +188,12 @@ export default function CreatorsPage() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Publishers</h1>
           <p className="text-slate-600 mt-1">Manage and moderate publishers</p>
         </div>
+        <Button
+          onClick={() => setCreateModalOpen(true)}
+          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg"
+        >
+          + Create Publisher
+        </Button>
       </div>
 
       <div>
@@ -249,6 +296,102 @@ export default function CreatorsPage() {
           onSend={handleMessageSend}
           recipientName={selectedCreator.username}
         />
+      )}
+
+      {createModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Create New Publisher
+            </h2>
+            <form onSubmit={handleCreatePublisher} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="publisher@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Username *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.username}
+                  onChange={(e) => setFormData({...formData, username: e.target.value})}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="publishername"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Password * (min 8 characters)
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={8}
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="••••••••"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Phone Number (optional)
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phoneNumber}
+                  onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="+1234567890"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isVerified"
+                  checked={formData.isVerified}
+                  onChange={(e) => setFormData({...formData, isVerified: e.target.checked})}
+                  className="w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-500"
+                />
+                <label htmlFor="isVerified" className="text-sm font-medium text-slate-700">
+                  Verify account immediately
+                </label>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setCreateModalOpen(false)
+                    setFormData({ email: '', username: '', password: '', phoneNumber: '', isVerified: true })
+                  }}
+                  className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700"
+                  disabled={createLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  disabled={createLoading}
+                >
+                  {createLoading ? 'Creating...' : 'Create Publisher'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   )
