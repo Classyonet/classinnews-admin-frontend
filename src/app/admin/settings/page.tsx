@@ -1087,7 +1087,7 @@ export default function SystemSettingsPage() {
                     <div className="mt-3 p-3 bg-white rounded-lg border border-slate-200">
                       <p className="text-xs font-semibold text-slate-600 mb-2">Current Logo:</p>
                       <img 
-                        src={`http://localhost:3006${settings.site_logo_url}`}
+                        src={settings.site_logo_url.startsWith('http') ? settings.site_logo_url : `${process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com'}${settings.site_logo_url}`}
                         alt="Logo Preview" 
                         className="h-12 object-contain"
                         onError={(e) => {
@@ -1124,7 +1124,7 @@ export default function SystemSettingsPage() {
                     <div className="mt-3 p-3 bg-white rounded-lg border border-slate-200">
                       <p className="text-xs font-semibold text-slate-600 mb-2">Current Favicon:</p>
                       <img 
-                        src={`http://localhost:3006${settings.site_favicon_url}`}
+                        src={settings.site_favicon_url.startsWith('http') ? settings.site_favicon_url : `${process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com'}${settings.site_favicon_url}`}
                         alt="Favicon Preview" 
                         className="h-8 w-8 object-contain"
                         onError={(e) => {
