@@ -535,6 +535,7 @@ export default function SystemSettingsPage() {
     trending_topics_retention_days: '2',
     // Site branding
     site_logo_url: '',
+    site_mobile_logo_url: '',
     site_favicon_url: '',
     // homepage carousel settings
     homepage_carousel_enabled: 'false',
@@ -578,6 +579,7 @@ export default function SystemSettingsPage() {
   const [layoutError, setLayoutError] = useState('');
   const [wordSuccess, setWordSuccess] = useState('');
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingMobileLogo, setUploadingMobileLogo] = useState(false);
   const [uploadingFavicon, setUploadingFavicon] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
 
@@ -869,6 +871,63 @@ export default function SystemSettingsPage() {
     }
   };
 
+  const handleMobileLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setUploadMessage('Please select an image file');
+      setTimeout(() => setUploadMessage(''), 3000);
+      return;
+    }
+
+    // Validate file size (3MB max)
+    if (file.size > 3 * 1024 * 1024) {
+      setUploadMessage('File size must be less than 3MB');
+      setTimeout(() => setUploadMessage(''), 3000);
+      return;
+    }
+
+    setUploadingMobileLogo(true);
+    setUploadMessage('');
+
+    try {
+      const formData = new FormData();
+      formData.append('mobileLogo', file);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/upload/mobile-logo`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSettings({ ...settings, site_mobile_logo_url: data.data.path });
+        setUploadMessage('Mobile logo uploaded successfully!');
+        setTimeout(() => setUploadMessage(''), 3000);
+        
+        // Refresh settings to get the new path
+        fetchSettings();
+      } else {
+        setUploadMessage(data.message || 'Upload failed');
+        setTimeout(() => setUploadMessage(''), 5000);
+      }
+    } catch (error: any) {
+      console.error('Mobile logo upload error:', error);
+      setUploadMessage('Failed to upload mobile logo');
+      setTimeout(() => setUploadMessage(''), 5000);
+    } finally {
+      setUploadingMobileLogo(false);
+      // Reset file input
+      e.target.value = '';
+    }
+  };
+
   const handleFaviconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1097,6 +1156,43 @@ export default function SystemSettingsPage() {
                         }}
                       />
                       <p className="text-xs text-slate-500 mt-1">{settings.site_logo_url}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Mobile Logo (Shown on Mobile Only)</label>
+                  <div className="flex items-start gap-4">
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleMobileLogoUpload}
+                        disabled={uploadingMobileLogo}
+                        className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 disabled:opacity-50"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Upload mobile logo (PNG, JPG - max 3MB, recommended: 120x40px)
+                      </p>
+                    </div>
+                    {uploadingMobileLogo && (
+                      <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                    )}
+                  </div>
+                  {settings.site_mobile_logo_url && (
+                    <div className="mt-3 p-3 bg-white rounded-lg border border-slate-200">
+                      <p className="text-xs font-semibold text-slate-600 mb-2">Current Mobile Logo:</p>
+                      <img 
+                        src={settings.site_mobile_logo_url.startsWith('http') ? settings.site_mobile_logo_url : `${process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com'}${settings.site_mobile_logo_url}`}
+                        alt="Mobile Logo Preview" 
+                        className="h-10 object-contain"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.alt = '❌ Failed to load mobile logo';
+                          target.className = 'text-red-500 text-xs';
+                        }}
+                      />
+                      <p className="text-xs text-slate-500 mt-1">{settings.site_mobile_logo_url}</p>
                     </div>
                   )}
                 </div>
