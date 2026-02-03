@@ -566,6 +566,7 @@ export default function SystemSettingsPage() {
     homepage_show_most_read: 'true',
     homepage_show_latest_news: 'true',
     homepage_show_categories: 'true',
+    homepage_most_read_min_views: '20',
     article_layout_style: 'sidebar-right',
     article_content_width: '66',
     article_sidebar_width: '33',
@@ -1918,6 +1919,29 @@ export default function SystemSettingsPage() {
                       <input type="checkbox" defaultChecked className="sr-only peer" />
                       <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                     </label>
+                  </div>
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <div className="font-semibold text-slate-900">Most Read Minimum Views</div>
+                        <div className="text-xs text-slate-600">Only show articles with at least this many views</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="5"
+                        value={layoutSettings.homepage_most_read_min_views}
+                        onChange={(e) => setLayoutSettings({ ...layoutSettings, homepage_most_read_min_views: e.target.value })}
+                        className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      />
+                      <span className="w-16 text-center font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">
+                        {layoutSettings.homepage_most_read_min_views}+
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-2">Recommended: 20-50 views for quality filtering</p>
                   </div>
                   <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200">
                     <div>
