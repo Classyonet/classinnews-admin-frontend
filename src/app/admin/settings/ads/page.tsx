@@ -3,6 +3,7 @@
 export const runtime = 'edge';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/auth-context';
 import { Search, Plus, Power, PowerOff, Save, Eye, Code2, BarChart3 } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com';
@@ -34,9 +35,11 @@ interface AdStats {
 }
 
 export default function AdsSettingsPage() {
+  const { token } = useAuth();
   const [ads, setAds] = useState<AdPlacement[]>([]);
   const [stats, setStats] = useState<AdStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState<'all' | 'homepage' | 'article'>('all');
   const [editingAd, setEditingAd] = useState<AdPlacement | null>(null);
@@ -60,19 +63,27 @@ export default function AdsSettingsPage() {
 
   const fetchAds = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/ads`);
+      setError(null);
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const response = await fetch(`${API_URL}/api/ads`, { headers });
+      if (!response.ok) {
+        const text = await response.text();
+        let msg = `HTTP ${response.status}`;
+        try { const j = JSON.parse(text); msg = j.error || j.message || msg; } catch {}
+        throw new Error(msg);
+      }
       const data = await response.json();
-      // Ensure data is an array
       if (Array.isArray(data)) {
         setAds(data);
-      } else if (data.error) {
-        console.error('API error:', data.error);
-        setAds([]);
+      } else if (data.data && Array.isArray(data.data)) {
+        setAds(data.data);
       } else {
         setAds([]);
       }
-    } catch (error) {
-      console.error('Error fetching ads:', error);
+    } catch (err: any) {
+      console.error('Error fetching ads:', err);
+      setError(err.message || 'Failed to load ads');
       setAds([]);
     } finally {
       setLoading(false);
@@ -81,16 +92,18 @@ export default function AdsSettingsPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/ads/stats/summary`);
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const response = await fetch(`${API_URL}/api/ads/stats/summary`, { headers });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      // Ensure we have valid stats object
-      if (data && !data.error && typeof data.total !== 'undefined') {
+      if (data && typeof data.total !== 'undefined') {
         setStats(data);
       } else {
         setStats({ total: 0, active: 0, homepage_ads: 0, article_ads: 0 });
       }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
+    } catch (err) {
+      console.error('Error fetching stats:', err);
       setStats({ total: 0, active: 0, homepage_ads: 0, article_ads: 0 });
     }
   };
@@ -99,6 +112,7 @@ export default function AdsSettingsPage() {
     try {
       const response = await fetch(`${API_URL}/api/ads/${ad.id}/toggle`, {
         method: 'PATCH',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
       });
       
       if (response.ok) {
@@ -118,6 +132,7 @@ export default function AdsSettingsPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           is_active: editingAd.is_active,
@@ -150,6 +165,7 @@ export default function AdsSettingsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(newAd),
       });
@@ -170,8 +186,9 @@ export default function AdsSettingsPage() {
         fetchStats();
         alert('Ad placement created successfully!');
       } else {
-        const data = await response.json();
-        alert(data.error || 'Failed to create ad placement');
+        let msg = 'Failed to create ad placement';
+        try { const data = await response.json(); msg = data.error || data.message || msg; } catch {}
+        alert(msg);
       }
     } catch (error) {
       console.error('Error creating ad:', error);
@@ -185,6 +202,7 @@ export default function AdsSettingsPage() {
     try {
       const response = await fetch(`${API_URL}/api/ads/${id}`, {
         method: 'DELETE',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
       });
 
       if (response.ok) {

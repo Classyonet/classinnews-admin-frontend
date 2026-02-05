@@ -83,8 +83,9 @@ export default function RatingSettingsPage() {
         }))
         setSettings(parsedSettings)
       } else {
-        const errorData = await response.json()
-        setError(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
+        let errorMsg = `HTTP ${response.status}: ${response.statusText}`
+        try { const errorData = await response.json(); errorMsg = errorData.message || errorMsg; } catch {}
+        setError(errorMsg)
       }
     } catch (error: any) {
       console.error('[Rating Settings] Error:', error)
@@ -123,8 +124,9 @@ export default function RatingSettingsPage() {
         delete newEdited[key]
         setEditedSettings(newEdited)
       } else {
-        const error = await response.json()
-        alert(error.message || 'Failed to save setting')
+        let msg = 'Failed to save setting'
+        try { const error = await response.json(); msg = error.message || msg; } catch {}
+        alert(msg)
       }
     } catch (error) {
       console.error('Save setting error:', error)
@@ -150,8 +152,9 @@ export default function RatingSettingsPage() {
         const result = await response.json()
         alert(result.message || 'Ratings recalculated successfully')
       } else {
-        const error = await response.json()
-        alert(error.message || 'Failed to recalculate ratings')
+        let msg = 'Failed to recalculate ratings'
+        try { const error = await response.json(); msg = error.message || msg; } catch {}
+        alert(msg)
       }
     } catch (error) {
       console.error('Recalculate ratings error:', error)

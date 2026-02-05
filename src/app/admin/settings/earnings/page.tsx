@@ -58,8 +58,6 @@ export default function EarningsSettingsPage() {
       
       console.log('[Earnings Settings] Fetching from:', apiUrl)
       console.log('[Earnings Settings] Token exists:', !!token)
-      console.log('[Earnings Settings] Token (first 20 chars):', token?.substring(0, 20))
-      console.log('[Earnings Settings] Full token:', token)
       
       if (!apiUrl || apiUrl === 'undefined/api/earnings-settings') {
         throw new Error('API URL is not configured. Please check NEXT_PUBLIC_API_URL environment variable.')
@@ -91,9 +89,12 @@ export default function EarningsSettingsPage() {
         setSettings(parsedSettings)
         console.log('[Earnings Settings] Parsed settings:', parsedSettings)
       } else {
-        const errorData = await response.json()
-        const errorMsg = errorData.message || `HTTP ${response.status}: ${response.statusText}`
-        console.error('[Earnings Settings] Failed to fetch:', response.status, response.statusText, errorData)
+        let errorMsg = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const errorData = await response.json()
+          errorMsg = errorData.message || errorMsg
+        } catch {}
+        console.error('[Earnings Settings] Failed to fetch:', response.status)
         setError(errorMsg)
       }
     } catch (error: any) {

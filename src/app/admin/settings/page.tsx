@@ -76,10 +76,11 @@ interface Subscriber {
 }
 
 // Ads Settings Tab Component
-function AdsSettingsTab() {
+function AdsSettingsTab({ token }: { token: string | null }) {
   const [ads, setAds] = useState<{id: string; placement_name: string; display_name: string; page_type: string; position: string; is_active: boolean; ad_code: string | null; width: string | null; height: string | null; updated_at: string}[]>([]);
   const [stats, setStats] = useState<{total: number; active: number; homepage_ads: number; article_ads: number} | null>(null);
   const [adsLoading, setAdsLoading] = useState(true);
+  const [adsError, setAdsError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'homepage' | 'article'>('all');
 
   useEffect(() => {
@@ -89,11 +90,21 @@ function AdsSettingsTab() {
 
   const fetchAds = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/ads`);
+      setAdsError(null);
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const response = await fetch(`${API_URL}/api/ads`, { headers });
+      if (!response.ok) {
+        const text = await response.text();
+        let msg = `HTTP ${response.status}`;
+        try { const j = JSON.parse(text); msg = j.error || j.message || msg; } catch {}
+        throw new Error(msg);
+      }
       const data = await response.json();
-      setAds(Array.isArray(data) ? data : []);
-    } catch (error) {
+      setAds(Array.isArray(data) ? data : (data.data && Array.isArray(data.data) ? data.data : []));
+    } catch (error: any) {
       console.error('Error fetching ads:', error);
+      setAdsError(error.message || 'Failed to load ads');
       setAds([]);
     } finally {
       setAdsLoading(false);
@@ -102,7 +113,10 @@ function AdsSettingsTab() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/ads/stats/summary`);
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const response = await fetch(`${API_URL}/api/ads/stats/summary`, { headers });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       if (data && !data.error) setStats(data);
     } catch (error) {
@@ -112,7 +126,10 @@ function AdsSettingsTab() {
 
   const toggleAd = async (id: string) => {
     try {
-      const response = await fetch(`${API_URL}/api/ads/${id}/toggle`, { method: 'PATCH' });
+      const response = await fetch(`${API_URL}/api/ads/${id}/toggle`, { 
+        method: 'PATCH',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      });
       if (response.ok) {
         fetchAds();
         fetchStats();
@@ -1751,7 +1768,7 @@ export default function SystemSettingsPage() {
       {/* Ads Settings Tab */}
       {activeTab === 'ads' && (
         <div className="rounded-2xl bg-white shadow-xl border border-slate-100 overflow-hidden">
-          <AdsSettingsTab />
+          <AdsSettingsTab token={token} />
         </div>
       )}
 

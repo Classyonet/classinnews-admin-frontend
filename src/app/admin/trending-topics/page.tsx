@@ -25,9 +25,10 @@ interface TrendingTopic {
 }
 
 export default function TrendingTopicsAdminPage() {
-  const { token } = useAuth()
+  const { token, loading: authLoading } = useAuth()
   const [topics, setTopics] = useState<TrendingTopic[]>([])
   const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<TrendingTopic | null>(null)
   const [form, setForm] = useState({
@@ -40,10 +41,18 @@ export default function TrendingTopicsAdminPage() {
   })
 
   useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted || authLoading) return
+    
     if (token) {
       fetchTopics()
+    } else {
+      setLoading(false)
     }
-  }, [token])
+  }, [token, mounted, authLoading])
 
   async function fetchTopics() {
     if (!token) return
@@ -117,8 +126,9 @@ export default function TrendingTopicsAdminPage() {
         body: JSON.stringify(form)
       })
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.message || 'Failed to save topic')
+        let msg = 'Failed to save topic'
+        try { const error = await res.json(); msg = error.message || msg; } catch {}
+        throw new Error(msg)
       }
       toast.success(editing ? 'Topic updated!' : 'Topic created!')
       closeModal()
