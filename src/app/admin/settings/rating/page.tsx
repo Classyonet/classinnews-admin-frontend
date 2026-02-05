@@ -22,6 +22,8 @@ import {
   Target
 } from 'lucide-react'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com';
+
 interface RatingSetting {
   id: number
   settingKey: string
@@ -59,7 +61,7 @@ export default function RatingSettingsPage() {
   const fetchSettings = async () => {
     try {
       setError(null)
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/rating-settings`
+      const apiUrl = `${API_URL}/api/rating-settings`
       
       if (!token) {
         throw new Error('No authentication token available. Please login again.')
@@ -104,7 +106,7 @@ export default function RatingSettingsPage() {
 
     setSaving(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rating-settings/${key}`, {
+      const response = await fetch(`${API_URL}/api/rating-settings/${key}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -137,7 +139,7 @@ export default function RatingSettingsPage() {
 
     setRecalculating(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/recalculate-ratings`, {
+      const response = await fetch(`${API_URL}/api/recalculate-ratings`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

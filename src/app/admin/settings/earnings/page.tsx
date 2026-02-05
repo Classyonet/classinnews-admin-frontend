@@ -16,6 +16,8 @@ import {
   CheckCircle
 } from 'lucide-react'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com';
+
 interface EarningSetting {
   id: number
   settingKey: string
@@ -52,7 +54,7 @@ export default function EarningsSettingsPage() {
   const fetchSettings = async () => {
     try {
       setError(null)
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/earnings-settings`
+      const apiUrl = `${API_URL}/api/earnings-settings`
       
       console.log('[Earnings Settings] Fetching from:', apiUrl)
       console.log('[Earnings Settings] Token exists:', !!token)
@@ -114,7 +116,7 @@ export default function EarningsSettingsPage() {
 
     setSaving(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/earnings-settings/${key}`, {
+      const response = await fetch(`${API_URL}/api/earnings-settings/${key}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
