@@ -92,7 +92,7 @@ function SubscribersTab() {
   const fetchStats = async () => {
     if (!token) return
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "`${API_URL}'}/api/notifications/subscribers/stats`, {
+      const response = await fetch(`${API_URL}/api/notifications/subscribers/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -110,7 +110,7 @@ function SubscribersTab() {
     if (!token) return
     try {
       setLoading(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "`${API_URL}'}/api/notifications/subscribers?status=active&page=${page}&limit=10`, {
+      const response = await fetch(`${API_URL}/api/notifications/subscribers?status=active&page=${page}&limit=10`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -308,7 +308,7 @@ function UnsubscribersTab() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "`${API_URL}'}/api/notifications/subscribers/stats`, {
+      const response = await fetch(`${API_URL}/api/notifications/subscribers/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -325,7 +325,7 @@ function UnsubscribersTab() {
   const fetchUnsubscribers = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "`${API_URL}'}/api/notifications/subscribers?status=unsubscribed&page=${page}&limit=10`, {
+      const response = await fetch(`${API_URL}/api/notifications/subscribers?status=unsubscribed&page=${page}&limit=10`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -843,7 +843,7 @@ export default function SystemSettingsPage() {
       const formData = new FormData();
       formData.append('logo', file);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "`${API_URL}'}/api/upload/logo`, {
+      const response = await fetch(`${API_URL}/api/upload/logo`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -900,7 +900,7 @@ export default function SystemSettingsPage() {
       const formData = new FormData();
       formData.append('mobileLogo', file);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "`${API_URL}'}/api/upload/mobile-logo`, {
+      const response = await fetch(`${API_URL}/api/upload/mobile-logo`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -957,7 +957,7 @@ export default function SystemSettingsPage() {
       const formData = new FormData();
       formData.append('favicon', file);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "`${API_URL}'}/api/upload/favicon`, {
+      const response = await fetch(`${API_URL}/api/upload/favicon`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

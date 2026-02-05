@@ -49,7 +49,7 @@ export default function TrendingTopicsAdminPage() {
     if (!token) return
     setLoading(true)
     try {
-      const res = await fetch(`${API_URL}/api/trending-topics` {
+      const res = await fetch(`${API_URL}/api/trending-topics`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (!res.ok) throw new Error('Failed to fetch topics')
@@ -166,7 +166,7 @@ export default function TrendingTopicsAdminPage() {
   async function swapOrder(a: TrendingTopic, b: TrendingTopic) {
     if (!token) return
     try {
-      await fetch(`${API_URL}/api/trending-topics/reorder` {
+      await fetch(`${API_URL}/api/trending-topics/reorder`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
