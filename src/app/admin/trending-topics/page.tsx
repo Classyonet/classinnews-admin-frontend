@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { Plus, Edit, Trash2, ArrowUp, ArrowDown } from 'lucide-react'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "`${API_URL}';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
 
 interface TrendingTopic {
   id: string
@@ -49,7 +49,7 @@ export default function TrendingTopicsAdminPage() {
     if (!token) return
     setLoading(true)
     try {
-      const res = await fetch("`${API_URL}/api/trending-topics', {
+      const res = await fetch(`${API_URL}/api/trending-topics` {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (!res.ok) throw new Error('Failed to fetch topics')
@@ -106,7 +106,7 @@ export default function TrendingTopicsAdminPage() {
     try {
       const url = editing
         ? `${API_URL}/api/trending-topics/${editing.id}`
-        : "`${API_URL}/api/trending-topics'
+        : `${API_URL}/api/trending-topics`
       const method = editing ? 'PUT' : 'POST'
       const res = await fetch(url, {
         method,
@@ -166,7 +166,7 @@ export default function TrendingTopicsAdminPage() {
   async function swapOrder(a: TrendingTopic, b: TrendingTopic) {
     if (!token) return
     try {
-      await fetch("`${API_URL}/api/trending-topics/reorder', {
+      await fetch(`${API_URL}/api/trending-topics/reorder` {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

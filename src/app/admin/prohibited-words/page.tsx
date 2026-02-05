@@ -5,7 +5,7 @@ export const runtime = 'edge';
 import { useState, useEffect } from 'react';
 import { Shield, Plus, Trash2, Check, X, AlertTriangle } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "`${API_URL}';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
 
 interface ProhibitedWord {
   id: string;
@@ -30,7 +30,7 @@ export default function ProhibitedWordsPage() {
   const fetchWords = async () => {
     try {
       const token = localStorage.getItem('admin_token');
-      const res = await fetch("`${API_URL}/api/prohibited-words', {
+      const res = await fetch(`${API_URL}/api/prohibited-words`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -54,7 +54,7 @@ export default function ProhibitedWordsPage() {
     setError('');
     try {
       const token = localStorage.getItem('admin_token');
-      const res = await fetch("`${API_URL}/api/prohibited-words', {
+      const res = await fetch(`${API_URL}/api/prohibited-words`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

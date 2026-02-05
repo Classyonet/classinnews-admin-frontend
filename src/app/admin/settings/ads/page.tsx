@@ -5,7 +5,7 @@ export const runtime = 'edge';
 import { useState, useEffect } from 'react';
 import { Search, Plus, Power, PowerOff, Save, Eye, Code2, BarChart3 } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || `${API_URL}';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
 
 interface AdPlacement {
   id: string;
@@ -146,7 +146,7 @@ export default function AdsSettingsPage() {
 
   const createAd = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/ads', {
+      const response = await fetch(`${API_URL}/api/ads`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

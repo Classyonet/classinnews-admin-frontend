@@ -8,7 +8,7 @@ import { settingsAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "`${API_URL}';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
 
 import { 
   Settings as SettingsIcon, 
@@ -628,7 +628,7 @@ export default function SystemSettingsPage() {
 
   const fetchProhibitedWords = async () => {
     try {
-      const res = await fetch("`${API_URL}/api/prohibited-words', {
+      const res = await fetch(`${API_URL}/api/prohibited-words`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -643,7 +643,7 @@ export default function SystemSettingsPage() {
   const fetchLayoutSettings = async () => {
     if (!token) return;
     try {
-      const response = await fetch("`${API_URL}/api/layout-settings/public/all');
+      const response = await fetch(`${API_URL}/api/layout-settings/public/all`);
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -667,7 +667,7 @@ export default function SystemSettingsPage() {
         .filter(([key]) => key.startsWith(prefix))
         .map(([key, value]) => ({ key, value }));
 
-      const response = await fetch("`${API_URL}/api/layout-settings/bulk', {
+      const response = await fetch(`${API_URL}/api/layout-settings/bulk`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -753,7 +753,7 @@ export default function SystemSettingsPage() {
 
     setWordError('');
     try {
-      const res = await fetch("`${API_URL}/api/prohibited-words', {
+      const res = await fetch(`${API_URL}/api/prohibited-words`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
