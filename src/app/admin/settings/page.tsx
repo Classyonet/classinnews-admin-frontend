@@ -75,6 +75,177 @@ interface Subscriber {
   notification_count: number;
 }
 
+// Ads Settings Tab Component
+function AdsSettingsTab() {
+  const [ads, setAds] = useState<{id: string; placement_name: string; display_name: string; page_type: string; position: string; is_active: boolean; ad_code: string | null; width: string | null; height: string | null; updated_at: string}[]>([]);
+  const [stats, setStats] = useState<{total: number; active: number; homepage_ads: number; article_ads: number} | null>(null);
+  const [adsLoading, setAdsLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'homepage' | 'article'>('all');
+
+  useEffect(() => {
+    fetchAds();
+    fetchStats();
+  }, []);
+
+  const fetchAds = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/ads`);
+      const data = await response.json();
+      setAds(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error fetching ads:', error);
+      setAds([]);
+    } finally {
+      setAdsLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/ads/stats/summary`);
+      const data = await response.json();
+      if (data && !data.error) setStats(data);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
+  const toggleAd = async (id: string) => {
+    try {
+      const response = await fetch(`${API_URL}/api/ads/${id}/toggle`, { method: 'PATCH' });
+      if (response.ok) {
+        fetchAds();
+        fetchStats();
+      }
+    } catch (error) {
+      console.error('Error toggling ad:', error);
+    }
+  };
+
+  const filteredAds = ads.filter(ad => filter === 'all' || ad.page_type === filter);
+
+  if (adsLoading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-6 text-white rounded-t-2xl">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center">
+            <DollarSign className="w-7 h-7 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">Advertisement Management</h2>
+            <p className="text-green-100 text-sm">Manage ad placements across your news portal</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6 space-y-6">
+        {/* Live Stats */}
+        {stats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-100">
+              <div className="text-3xl font-bold text-purple-600">{stats.total}</div>
+              <p className="text-sm text-slate-600 font-medium">Total Placements</p>
+            </div>
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
+              <div className="text-3xl font-bold text-green-600">{stats.active}</div>
+              <p className="text-sm text-slate-600 font-medium">Active Ads</p>
+            </div>
+            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-100">
+              <div className="text-3xl font-bold text-blue-600">{stats.homepage_ads}</div>
+              <p className="text-sm text-slate-600 font-medium">Homepage Ads</p>
+            </div>
+            <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl p-4 border border-orange-100">
+              <div className="text-3xl font-bold text-orange-600">{stats.article_ads}</div>
+              <p className="text-sm text-slate-600 font-medium">Article Page Ads</p>
+            </div>
+          </div>
+        )}
+
+        {/* Filter Tabs */}
+        <div className="flex gap-2">
+          {(['all', 'homepage', 'article'] as const).map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                filter === f
+                  ? 'bg-green-600 text-white shadow-md'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {f === 'all' ? 'All Ads' : f === 'homepage' ? 'Homepage' : 'Article Page'}
+            </button>
+          ))}
+        </div>
+
+        {/* Ads List */}
+        <div className="space-y-3">
+          {filteredAds.map(ad => (
+            <div key={ad.id} className="flex items-center justify-between p-4 bg-white rounded-xl border-2 border-slate-200 hover:border-green-200 transition-all">
+              <div className="flex items-center gap-4 flex-1">
+                <button
+                  onClick={() => toggleAd(ad.id)}
+                  className={`w-12 h-7 rounded-full relative transition-colors duration-200 flex-shrink-0 ${
+                    ad.is_active ? 'bg-green-500' : 'bg-slate-300'
+                  }`}
+                >
+                  <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-transform duration-200 shadow-md ${
+                    ad.is_active ? 'translate-x-6' : 'translate-x-1'
+                  }`} />
+                </button>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-slate-900 text-sm">{ad.display_name}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                      ad.page_type === 'homepage' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700'
+                    }`}>
+                      {ad.page_type === 'homepage' ? 'Homepage' : 'Article'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {ad.width || 'Auto'} x {ad.height || 'Auto'} &bull; {ad.ad_code ? 'Has ad code' : 'No ad code set'}
+                  </p>
+                </div>
+              </div>
+              <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                ad.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
+              }`}>
+                {ad.is_active ? 'ACTIVE' : 'INACTIVE'}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Link to Full Management */}
+        <div className="text-center pt-4 border-t border-slate-100">
+          <a
+            href="/admin/settings/ads"
+            className="inline-flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl"
+          >
+            <DollarSign className="w-5 h-5" />
+            Open Full Ad Management Dashboard
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </a>
+          <p className="text-xs text-slate-500 mt-3">
+            Edit ad code, create new placements, preview ads, and more
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Subscribers Tab Component
 function SubscribersTab() {
   const { token } = useAuth();
@@ -1580,110 +1751,7 @@ export default function SystemSettingsPage() {
       {/* Ads Settings Tab */}
       {activeTab === 'ads' && (
         <div className="rounded-2xl bg-white shadow-xl border border-slate-100 overflow-hidden">
-          {/* Redirect to dedicated ads page */}
-          <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-8 text-white">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center">
-                <DollarSign className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold mb-1">Advertisement Management</h2>
-                <p className="text-green-100">Manage ad placements across your news portal</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="p-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border-2 border-purple-100">
-                <div className="text-4xl font-bold text-purple-600 mb-2">13</div>
-                <p className="text-slate-700 font-medium">Total Ad Placements</p>
-                <p className="text-sm text-slate-500 mt-1">Homepage & Article pages</p>
-              </div>
-              
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 border-2 border-blue-100">
-                <div className="text-4xl font-bold text-blue-600 mb-2">6</div>
-                <p className="text-slate-700 font-medium">Homepage Ads</p>
-                <p className="text-sm text-slate-500 mt-1">Banners & Sidebars</p>
-              </div>
-              
-              <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl p-6 border-2 border-orange-100">
-                <div className="text-4xl font-bold text-orange-600 mb-2">7</div>
-                <p className="text-slate-700 font-medium">Article Page Ads</p>
-                <p className="text-sm text-slate-500 mt-1">Inline & Sidebar ads</p>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-slate-50 to-gray-50 rounded-xl p-8 border border-slate-200 mb-6">
-              <h3 className="text-xl font-bold text-slate-900 mb-4">Features</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-900">Toggle Activation</p>
-                    <p className="text-sm text-slate-600">Enable/disable ads with one click</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-900">Code Editor</p>
-                    <p className="text-sm text-slate-600">Edit HTML/JavaScript ad code</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-purple-500 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-900">Live Preview</p>
-                    <p className="text-sm text-slate-600">Preview ads before publishing</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-900">Analytics Ready</p>
-                    <p className="text-sm text-slate-600">Track performance & revenue</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center">
-              <a
-                href="/admin/settings/ads"
-                className="inline-flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
-              >
-                <DollarSign className="w-6 h-6" />
-                Open Ad Management Dashboard
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </a>
-              <p className="text-sm text-slate-500 mt-4">
-                Manage all 13 ad placements • Edit code • Toggle activation • Preview changes
-              </p>
-            </div>
-          </div>
+          <AdsSettingsTab />
         </div>
       )}
 
