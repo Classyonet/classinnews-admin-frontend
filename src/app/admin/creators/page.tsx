@@ -150,7 +150,7 @@ export default function CreatorsPage() {
         body: body.trim()
       })
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com'
       const response = await fetch(`${apiUrl}/api/messages`, {
         method: 'POST',
         headers: {

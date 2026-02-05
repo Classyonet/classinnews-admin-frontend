@@ -69,7 +69,7 @@ export default function WithdrawalsPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/withdrawals/stats/summary`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com'}/api/withdrawals/stats/summary`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const data = await response.json()
@@ -85,8 +85,8 @@ export default function WithdrawalsPage() {
     try {
       setLoading(true)
       const url = filterStatus === 'all' 
-        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/withdrawals`
-        : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/withdrawals?status=${filterStatus}`
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com'}/api/withdrawals`
+        : `${process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com'}/api/withdrawals?status=${filterStatus}`
       
       const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -104,7 +104,7 @@ export default function WithdrawalsPage() {
 
   const viewDetails = async (withdrawal: WithdrawalRequest) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/withdrawals/${withdrawal.id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com'}/api/withdrawals/${withdrawal.id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const data = await response.json()
@@ -129,7 +129,7 @@ export default function WithdrawalsPage() {
 
     setProcessing(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/withdrawals/${selectedWithdrawal.id}/approve`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com'}/api/withdrawals/${selectedWithdrawal.id}/approve`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -164,7 +164,7 @@ export default function WithdrawalsPage() {
 
     setProcessing(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/withdrawals/${selectedWithdrawal.id}/reject`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com'}/api/withdrawals/${selectedWithdrawal.id}/reject`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -194,7 +194,7 @@ export default function WithdrawalsPage() {
 
     setProcessing(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/withdrawals/${selectedWithdrawal.id}/complete`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com'}/api/withdrawals/${selectedWithdrawal.id}/complete`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

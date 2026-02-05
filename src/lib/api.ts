@@ -1,5 +1,5 @@
 // Prefer the standard NEXT_PUBLIC_API_URL for compatibility, fall back to the admin-specific
-const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:3002';
+const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_ADMIN_API_URL || 'https://classinnews-admin-backend.onrender.com';
 const API_URL = RAW_API_URL.replace(/\/+$/,'');
 
 interface ApiFetchOptions extends RequestInit {
