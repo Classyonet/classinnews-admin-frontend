@@ -5,6 +5,8 @@ export const runtime = 'edge';
 import { useState, useEffect } from 'react';
 import { Search, Plus, Power, PowerOff, Save, Eye, Code2, BarChart3 } from 'lucide-react';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || `${API_URL}';
+
 interface AdPlacement {
   id: string;
   placement_name: string;
@@ -58,7 +60,7 @@ export default function AdsSettingsPage() {
 
   const fetchAds = async () => {
     try {
-      const response = await fetch('http://localhost:3002/api/ads');
+      const response = await fetch(`${API_URL}/api/ads`);
       const data = await response.json();
       // Ensure data is an array
       if (Array.isArray(data)) {
@@ -79,7 +81,7 @@ export default function AdsSettingsPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('http://localhost:3002/api/ads/stats/summary');
+      const response = await fetch(`${API_URL}/api/ads/stats/summary`);
       const data = await response.json();
       // Ensure we have valid stats object
       if (data && !data.error && typeof data.total !== 'undefined') {
@@ -95,7 +97,7 @@ export default function AdsSettingsPage() {
 
   const toggleAdStatus = async (ad: AdPlacement) => {
     try {
-      const response = await fetch(`http://localhost:3002/api/ads/${ad.id}/toggle`, {
+      const response = await fetch(`${API_URL}/api/ads/${ad.id}/toggle`, {
         method: 'PATCH',
       });
       
@@ -112,7 +114,7 @@ export default function AdsSettingsPage() {
     if (!editingAd) return;
 
     try {
-      const response = await fetch(`http://localhost:3002/api/ads/${editingAd.id}`, {
+      const response = await fetch(`${API_URL}/api/ads/${editingAd.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -144,7 +146,7 @@ export default function AdsSettingsPage() {
 
   const createAd = async () => {
     try {
-      const response = await fetch('http://localhost:3002/api/ads', {
+      const response = await fetch(`${API_URL}/api/ads', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -181,7 +183,7 @@ export default function AdsSettingsPage() {
     if (!confirm('Are you sure you want to delete this ad placement?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3002/api/ads/${id}`, {
+      const response = await fetch(`${API_URL}/api/ads/${id}`, {
         method: 'DELETE',
       });
 
@@ -823,3 +825,4 @@ export default function AdsSettingsPage() {
     </div>
   );
 }
+
