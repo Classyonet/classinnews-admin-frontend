@@ -7,6 +7,9 @@ import { useAuth } from '@/contexts/auth-context';
 import { settingsAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "`${API_URL}';
+
 import { 
   Settings as SettingsIcon, 
   Activity, 
@@ -89,7 +92,7 @@ function SubscribersTab() {
   const fetchStats = async () => {
     if (!token) return
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/notifications/subscribers/stats`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "`${API_URL}'}/api/notifications/subscribers/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -107,7 +110,7 @@ function SubscribersTab() {
     if (!token) return
     try {
       setLoading(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/notifications/subscribers?status=active&page=${page}&limit=10`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "`${API_URL}'}/api/notifications/subscribers?status=active&page=${page}&limit=10`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -305,7 +308,7 @@ function UnsubscribersTab() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/notifications/subscribers/stats`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "`${API_URL}'}/api/notifications/subscribers/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -322,7 +325,7 @@ function UnsubscribersTab() {
   const fetchUnsubscribers = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/notifications/subscribers?status=unsubscribed&page=${page}&limit=10`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "`${API_URL}'}/api/notifications/subscribers?status=unsubscribed&page=${page}&limit=10`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -625,7 +628,7 @@ export default function SystemSettingsPage() {
 
   const fetchProhibitedWords = async () => {
     try {
-      const res = await fetch('http://localhost:3002/api/prohibited-words', {
+      const res = await fetch("`${API_URL}/api/prohibited-words', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -640,7 +643,7 @@ export default function SystemSettingsPage() {
   const fetchLayoutSettings = async () => {
     if (!token) return;
     try {
-      const response = await fetch('http://localhost:3002/api/layout-settings/public/all');
+      const response = await fetch("`${API_URL}/api/layout-settings/public/all');
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -664,7 +667,7 @@ export default function SystemSettingsPage() {
         .filter(([key]) => key.startsWith(prefix))
         .map(([key, value]) => ({ key, value }));
 
-      const response = await fetch('http://localhost:3002/api/layout-settings/bulk', {
+      const response = await fetch("`${API_URL}/api/layout-settings/bulk', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -750,7 +753,7 @@ export default function SystemSettingsPage() {
 
     setWordError('');
     try {
-      const res = await fetch('http://localhost:3002/api/prohibited-words', {
+      const res = await fetch("`${API_URL}/api/prohibited-words', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -777,7 +780,7 @@ export default function SystemSettingsPage() {
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      const res = await fetch(`http://localhost:3002/api/prohibited-words/${id}`, {
+      const res = await fetch(`${API_URL}/api/prohibited-words/${id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -800,7 +803,7 @@ export default function SystemSettingsPage() {
     if (!confirm('Are you sure you want to delete this word?')) return;
 
     try {
-      const res = await fetch(`http://localhost:3002/api/prohibited-words/${id}`, {
+      const res = await fetch(`${API_URL}/api/prohibited-words/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -840,7 +843,7 @@ export default function SystemSettingsPage() {
       const formData = new FormData();
       formData.append('logo', file);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/upload/logo`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "`${API_URL}'}/api/upload/logo`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -897,7 +900,7 @@ export default function SystemSettingsPage() {
       const formData = new FormData();
       formData.append('mobileLogo', file);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/upload/mobile-logo`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "`${API_URL}'}/api/upload/mobile-logo`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -954,7 +957,7 @@ export default function SystemSettingsPage() {
       const formData = new FormData();
       formData.append('favicon', file);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'}/api/upload/favicon`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "`${API_URL}'}/api/upload/favicon`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

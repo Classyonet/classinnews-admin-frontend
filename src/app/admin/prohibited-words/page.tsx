@@ -5,6 +5,8 @@ export const runtime = 'edge';
 import { useState, useEffect } from 'react';
 import { Shield, Plus, Trash2, Check, X, AlertTriangle } from 'lucide-react';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "`${API_URL}';
+
 interface ProhibitedWord {
   id: string;
   word: string;
@@ -28,7 +30,7 @@ export default function ProhibitedWordsPage() {
   const fetchWords = async () => {
     try {
       const token = localStorage.getItem('admin_token');
-      const res = await fetch('http://localhost:3002/api/prohibited-words', {
+      const res = await fetch("`${API_URL}/api/prohibited-words', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -52,7 +54,7 @@ export default function ProhibitedWordsPage() {
     setError('');
     try {
       const token = localStorage.getItem('admin_token');
-      const res = await fetch('http://localhost:3002/api/prohibited-words', {
+      const res = await fetch("`${API_URL}/api/prohibited-words', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -80,7 +82,7 @@ export default function ProhibitedWordsPage() {
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
       const token = localStorage.getItem('admin_token');
-      const res = await fetch(`http://localhost:3002/api/prohibited-words/${id}`, {
+      const res = await fetch(`${API_URL}/api/prohibited-words/${id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -104,7 +106,7 @@ export default function ProhibitedWordsPage() {
 
     try {
       const token = localStorage.getItem('admin_token');
-      const res = await fetch(`http://localhost:3002/api/prohibited-words/${id}`, {
+      const res = await fetch(`${API_URL}/api/prohibited-words/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

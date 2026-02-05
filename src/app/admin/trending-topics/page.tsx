@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { Plus, Edit, Trash2, ArrowUp, ArrowDown } from 'lucide-react'
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "`${API_URL}';
+
 interface TrendingTopic {
   id: string
   title: string
@@ -47,7 +49,7 @@ export default function TrendingTopicsAdminPage() {
     if (!token) return
     setLoading(true)
     try {
-      const res = await fetch('http://localhost:3002/api/trending-topics', {
+      const res = await fetch("`${API_URL}/api/trending-topics', {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (!res.ok) throw new Error('Failed to fetch topics')
@@ -103,8 +105,8 @@ export default function TrendingTopicsAdminPage() {
     }
     try {
       const url = editing
-        ? `http://localhost:3002/api/trending-topics/${editing.id}`
-        : 'http://localhost:3002/api/trending-topics'
+        ? `${API_URL}/api/trending-topics/${editing.id}`
+        : "`${API_URL}/api/trending-topics'
       const method = editing ? 'PUT' : 'POST'
       const res = await fetch(url, {
         method,
@@ -130,7 +132,7 @@ export default function TrendingTopicsAdminPage() {
     if (!confirm('Are you sure you want to delete this trending topic?')) return
     if (!token) return
     try {
-      const res = await fetch(`http://localhost:3002/api/trending-topics/${id}`, {
+      const res = await fetch(`${API_URL}/api/trending-topics/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -145,7 +147,7 @@ export default function TrendingTopicsAdminPage() {
   async function handleToggleActive(id: string, isActive: boolean) {
     if (!token) return
     try {
-      const res = await fetch(`http://localhost:3002/api/trending-topics/${id}`, {
+      const res = await fetch(`${API_URL}/api/trending-topics/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -164,7 +166,7 @@ export default function TrendingTopicsAdminPage() {
   async function swapOrder(a: TrendingTopic, b: TrendingTopic) {
     if (!token) return
     try {
-      await fetch('http://localhost:3002/api/trending-topics/reorder', {
+      await fetch("`${API_URL}/api/trending-topics/reorder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
