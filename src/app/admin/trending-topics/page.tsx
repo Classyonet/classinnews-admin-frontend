@@ -10,7 +10,15 @@ import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { Plus, Edit, Trash2, ArrowUp, ArrowDown } from 'lucide-react'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com';
+// Ensure production URL is always used
+const getApiUrl = () => {
+  const url = process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com';
+  if (typeof window !== 'undefined' && url.includes('localhost')) {
+    return 'https://classinnews-admin-backend.onrender.com';
+  }
+  return url;
+};
+const API_URL = getApiUrl();
 
 interface TrendingTopic {
   id: string

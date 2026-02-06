@@ -1,6 +1,13 @@
 // Prefer the standard NEXT_PUBLIC_API_URL for compatibility, fall back to the admin-specific
-const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_ADMIN_API_URL || 'https://classinnews-admin-backend.onrender.com';
-const API_URL = RAW_API_URL.replace(/\/+$/,'');
+const getApiUrl = () => {
+  const url = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_ADMIN_API_URL || 'https://classinnews-admin-backend.onrender.com';
+  // Never use localhost in production
+  if (typeof window !== 'undefined' && url.includes('localhost')) {
+    return 'https://classinnews-admin-backend.onrender.com';
+  }
+  return url.replace(/\/+$/, '');
+};
+const API_URL = getApiUrl();
 
 interface ApiFetchOptions extends RequestInit {
   token?: string;

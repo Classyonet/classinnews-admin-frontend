@@ -6,7 +6,16 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { Search, Plus, Power, PowerOff, Save, Eye, Code2, BarChart3 } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com';
+// Ensure production URL is always used
+const getApiUrl = () => {
+  const url = process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com';
+  // Never use localhost in production
+  if (typeof window !== 'undefined' && url.includes('localhost')) {
+    return 'https://classinnews-admin-backend.onrender.com';
+  }
+  return url;
+};
+const API_URL = getApiUrl();
 
 interface AdPlacement {
   id: string;
