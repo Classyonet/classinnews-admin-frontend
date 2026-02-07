@@ -7,7 +7,6 @@ import { useAuth } from '@/contexts/auth-context';
 import { Search, Plus, Power, PowerOff, Save, Eye, Code2, BarChart3 } from 'lucide-react';
 import { API_URL } from '@/lib/api-config';
 import { AD_POSITION_LABELS } from '@/lib/constants';
-import DOMPurify from 'isomorphic-dompurify';
 
 interface AdPlacement {
   id: string;
@@ -265,13 +264,14 @@ export default function AdsSettingsPage() {
     return AD_POSITION_LABELS[position] || position;
   };
 
-  // Sanitize HTML before rendering
+  // Basic HTML sanitization without DOMPurify (edge-runtime compatible)
   const sanitizeAdCode = (code: string): string => {
-    return DOMPurify.sanitize(code, {
-      ALLOWED_TAGS: ['script', 'iframe', 'img', 'a', 'div', 'span', 'ins'],
-      ALLOWED_ATTR: ['src', 'href', 'class', 'id', 'style', 'data-ad-client', 'data-ad-slot', 'width', 'height'],
-      ALLOW_DATA_ATTR: true,
-    });
+    // Strip dangerous tags while allowing ad-related ones
+    // Remove script tags, event handlers, and javascript: URLs
+    return code
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '')
+      .replace(/javascript\s*:/gi, '');
   };
 
   if (loading) {
