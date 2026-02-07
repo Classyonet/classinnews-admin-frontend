@@ -117,8 +117,12 @@ function AdsSettingsTab({ token }: { token: string | null }) {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const response = await fetch(`${API_URL}/api/ads/stats/summary`, { headers });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      if (data && !data.error) setStats(data);
+      const result = await response.json();
+      if (result.success && result.data) {
+        setStats(result.data);
+      } else if (typeof result.total !== 'undefined') {
+        setStats(result);
+      }
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
