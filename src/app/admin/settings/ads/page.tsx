@@ -96,7 +96,12 @@ export default function AdsSettingsPage() {
       } else {
         const text = await adsRes.text();
         console.error('Ads fetch failed:', adsRes.status, text);
-        setError(`Failed to load ads (${adsRes.status})`);
+        try {
+          const errData = JSON.parse(text);
+          setError(`Failed to load ads (${adsRes.status}): ${errData.details || errData.error || text}`);
+        } catch {
+          setError(`Failed to load ads (${adsRes.status}): ${text}`);
+        }
       }
       if (statsRes.ok) {
         const statsData = await statsRes.json();
