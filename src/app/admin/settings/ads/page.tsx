@@ -1,7 +1,5 @@
 'use client';
 
-export const runtime = 'edge';
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { Search, Plus, Power, PowerOff, Save, Eye, Code2, BarChart3, Trash2, ArrowLeft } from 'lucide-react';

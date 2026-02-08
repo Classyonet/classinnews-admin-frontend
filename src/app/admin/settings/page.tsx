@@ -1,7 +1,5 @@
 'use client';
 
-export const runtime = 'edge';
-
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { settingsAPI } from '@/lib/api';

@@ -1,24 +1,13 @@
 'use client'
 
-export const runtime = 'edge';
-
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { Plus, Edit, Trash2, ArrowUp, ArrowDown } from 'lucide-react'
-
-// Ensure production URL is always used
-const getApiUrl = () => {
-  const url = process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com';
-  if (typeof window !== 'undefined' && url.includes('localhost')) {
-    return 'https://classinnews-admin-backend.onrender.com';
-  }
-  return url;
-};
-const API_URL = getApiUrl();
+import { API_URL } from '@/lib/api-config'
 
 interface TrendingTopic {
   id: string
@@ -52,37 +41,41 @@ export default function TrendingTopicsAdminPage() {
     setMounted(true)
   }, [])
 
-  useEffect(() => {
-    if (!mounted || authLoading) return
-    
-    if (token) {
-      fetchTopics()
-    } else {
-      setLoading(false)
+  const fetchTopics = useCallback(async () => {
+    if (!token) {
+      setLoading(false);
+      return;
     }
-  }, [token, mounted, authLoading])
 
-  async function fetchTopics() {
-    if (!token) return
-    setLoading(true)
+    setLoading(true);
+
     try {
       const res = await fetch(`${API_URL}/api/trending-topics`, {
         headers: { Authorization: `Bearer ${token}` }
-      })
-      if (!res.ok) throw new Error('Failed to fetch topics')
-      const data = await res.json()
-      setTopics(data.data || [])
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to fetch topics');
+      }
+
+      const data = await res.json();
+      setTopics(data.data || []);
     } catch (err) {
-      console.error('Failed to fetch topics:', err)
-      setTopics([])
-      toast.error('Failed to fetch trending topics')
+      console.error('Failed to fetch topics:', err);
+      setTopics([]);
+      toast.error('Failed to fetch trending topics');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  }, [token]);
+
+  useEffect(() => {
+    if (!mounted || authLoading) return;
+    fetchTopics();
+  }, [token, mounted, authLoading, fetchTopics]);
 
   function openModal(topic?: TrendingTopic) {
-    setEditing(topic || null)
+    setEditing(topic || null);
     setForm(topic ? {
       title: topic.title,
       description: topic.description,
@@ -97,13 +90,13 @@ export default function TrendingTopicsAdminPage() {
       color: '#3B82F6',
       isActive: true,
       order: topics.length,
-    })
-    setModalOpen(true)
+    });
+    setModalOpen(true);
   }
 
   function closeModal() {
-    setEditing(null)
-    setModalOpen(false)
+    setEditing(null);
+    setModalOpen(false);
     setForm({
       title: '',
       description: '',
@@ -111,20 +104,35 @@ export default function TrendingTopicsAdminPage() {
       color: '#3B82F6',
       isActive: true,
       order: 0,
-    })
+    });
   }
 
   async function handleSave(e: React.FormEvent) {
-    e.preventDefault()
+    e.preventDefault();
+    
     if (!token) {
-      toast.error('No authentication token found')
-      return
+      toast.error('No authentication token found');
+      return;
     }
+
+    // Validate form
+    if (!form.title.trim()) {
+      toast.error('Title is required');
+      return;
+    }
+
+    if (!form.description.trim()) {
+      toast.error('Description is required');
+      return;
+    }
+
     try {
       const url = editing
         ? `${API_URL}/api/trending-topics/${editing.id}`
-        : `${API_URL}/api/trending-topics`
-      const method = editing ? 'PUT' : 'POST'
+        : `${API_URL}/api/trending-topics`;
+      
+      const method = editing ? 'PUT' : 'POST';
+      
       const res = await fetch(url, {
         method,
         headers: {
@@ -132,38 +140,48 @@ export default function TrendingTopicsAdminPage() {
           Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(form)
-      })
+      });
+      
       if (!res.ok) {
-        let msg = 'Failed to save topic'
-        try { const error = await res.json(); msg = error.message || msg; } catch {}
-        throw new Error(msg)
+        let msg = 'Failed to save topic';
+        try { 
+          const error = await res.json(); 
+          msg = error.message || error.error || msg; 
+        } catch {}
+        throw new Error(msg);
       }
-      toast.success(editing ? 'Topic updated!' : 'Topic created!')
-      closeModal()
-      fetchTopics()
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to save trending topic')
+      
+      toast.success(editing ? 'Topic updated!' : 'Topic created!');
+      closeModal();
+      fetchTopics();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save trending topic';
+      toast.error(message);
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Are you sure you want to delete this trending topic?')) return
-    if (!token) return
+    if (!confirm('Are you sure you want to delete this trending topic?')) return;
+    if (!token) return;
+
     try {
       const res = await fetch(`${API_URL}/api/trending-topics/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
-      })
-      if (!res.ok) throw new Error('Failed to delete topic')
-      toast.success('Topic deleted successfully')
-      fetchTopics()
+      });
+      
+      if (!res.ok) throw new Error('Failed to delete topic');
+      
+      toast.success('Topic deleted successfully');
+      fetchTopics();
     } catch (err) {
-      toast.error('Failed to delete topic')
+      toast.error('Failed to delete topic');
     }
   }
 
   async function handleToggleActive(id: string, isActive: boolean) {
-    if (!token) return
+    if (!token) return;
+
     try {
       const res = await fetch(`${API_URL}/api/trending-topics/${id}`, {
         method: 'PUT',
@@ -172,17 +190,20 @@ export default function TrendingTopicsAdminPage() {
           Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ isActive: !isActive }),
-      })
-      if (!res.ok) throw new Error('Failed to update status')
-      toast.success('Topic status updated')
-      fetchTopics()
+      });
+      
+      if (!res.ok) throw new Error('Failed to update status');
+      
+      toast.success('Topic status updated');
+      fetchTopics();
     } catch (err) {
-      toast.error('Failed to update status')
+      toast.error('Failed to update status');
     }
   }
 
   async function swapOrder(a: TrendingTopic, b: TrendingTopic) {
-    if (!token) return
+    if (!token) return;
+
     try {
       await fetch(`${API_URL}/api/trending-topics/reorder`, {
         method: 'POST',
@@ -190,32 +211,51 @@ export default function TrendingTopicsAdminPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ idA: a.id, orderA: b.order, idB: b.id, orderB: a.order })
-      })
-      fetchTopics()
+        body: JSON.stringify({ 
+          idA: a.id, 
+          orderA: b.order, 
+          idB: b.id, 
+          orderB: a.order 
+        })
+      });
+      
+      fetchTopics();
     } catch (err) {
-      toast.error('Failed to reorder')
+      toast.error('Failed to reorder');
     }
   }
 
   function moveUp(topic: TrendingTopic) {
-    const idx = topics.findIndex(t => t.id === topic.id)
-    if (idx > 0) swapOrder(topic, topics[idx - 1])
+    const idx = topics.findIndex(t => t.id === topic.id);
+    if (idx > 0) swapOrder(topic, topics[idx - 1]);
   }
 
   function moveDown(topic: TrendingTopic) {
-    const idx = topics.findIndex(t => t.id === topic.id)
-    if (idx < topics.length - 1) swapOrder(topic, topics[idx + 1])
+    const idx = topics.findIndex(t => t.id === topic.id);
+    if (idx < topics.length - 1) swapOrder(topic, topics[idx + 1]);
+  }
+
+  if (!mounted || authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Trending Topics</h1>
-                    <p className="text-slate-600 mt-1">Manage trending topics shown to publishers</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Trending Topics
+          </h1>
+          <p className="text-slate-600 mt-1">Manage trending topics shown to publishers</p>
         </div>
-        <Button onClick={() => openModal()} className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg shadow-purple-500/30 gap-2">
+        <Button 
+          onClick={() => openModal()} 
+          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg shadow-purple-500/30 gap-2"
+        >
           <Plus className="w-4 h-4" />
           Add Topic
         </Button>
@@ -228,7 +268,10 @@ export default function TrendingTopicsAdminPage() {
       ) : topics.length === 0 ? (
         <div className="rounded-2xl bg-white p-12 shadow-lg border border-slate-100 text-center">
           <p className="text-slate-600 font-medium mb-4">No trending topics yet</p>
-          <Button onClick={() => openModal()} className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg shadow-purple-500/30">
+          <Button 
+            onClick={() => openModal()} 
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg shadow-purple-500/30"
+          >
             Create Your First Topic
           </Button>
         </div>
@@ -314,6 +357,7 @@ export default function TrendingTopicsAdminPage() {
         </div>
       )}
 
+      {/* Modal */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 space-y-5 border border-purple-100">
@@ -333,6 +377,7 @@ export default function TrendingTopicsAdminPage() {
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder="e.g., AI and Technology"
                   required
+                  maxLength={200}
                   className="rounded-xl border-slate-300 focus:border-purple-400 focus:ring-purple-400"
                 />
               </div>
@@ -344,6 +389,7 @@ export default function TrendingTopicsAdminPage() {
                   placeholder="Describe the topic..."
                   rows={4}
                   required
+                  maxLength={1000}
                   className="rounded-xl border-slate-300 focus:border-purple-400 focus:ring-purple-400"
                 />
               </div>
@@ -388,10 +434,18 @@ export default function TrendingTopicsAdminPage() {
                 />
               </div>
               <div className="flex gap-3 pt-4">
-                <Button type="button" variant="outline" onClick={closeModal} className="flex-1 rounded-xl border-2 hover:bg-slate-100">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={closeModal} 
+                  className="flex-1 rounded-xl border-2 hover:bg-slate-100"
+                >
                   Cancel
                 </Button>
-                <Button type="submit" className="flex-1 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg shadow-purple-500/30">
+                <Button 
+                  type="submit" 
+                  className="flex-1 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg shadow-purple-500/30"
+                >
                   {editing ? 'Update' : 'Create'}
                 </Button>
               </div>
@@ -400,8 +454,5 @@ export default function TrendingTopicsAdminPage() {
         </div>
       )}
     </div>
-  )
+  );
 }
-
-
-
