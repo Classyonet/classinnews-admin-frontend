@@ -11,7 +11,8 @@ import {
   Save,
   Loader2,
   TrendingUp,
-  CheckCircle
+  CheckCircle,
+  Plus
 } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com';
@@ -33,6 +34,7 @@ export default function EarningsSettingsPage() {
   const [editedSettings, setEditedSettings] = useState<Record<string, number>>({})
   const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  const [seeding, setSeeding] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -140,6 +142,42 @@ export default function EarningsSettingsPage() {
       alert('Failed to update setting')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const seedDefaults = async () => {
+    setSeeding(true)
+    try {
+      const response = await fetch(`${API_URL}/api/earnings-settings/seed`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        const settingsData = result.data || []
+        const parsedSettings = settingsData.map((s: any) => ({
+          ...s,
+          settingValue: parseFloat(s.settingValue)
+        }))
+        setSettings(parsedSettings)
+        setError(null)
+      } else {
+        let errorMsg = 'Failed to create default settings'
+        try {
+          const errorData = await response.json()
+          errorMsg = errorData.message || errorMsg
+        } catch {}
+        setError(errorMsg)
+      }
+    } catch (error: any) {
+      console.error('Seed error:', error)
+      setError(error.message || 'Failed to create default settings')
+    } finally {
+      setSeeding(false)
     }
   }
 
@@ -317,7 +355,19 @@ export default function EarningsSettingsPage() {
         <div className="rounded-2xl bg-slate-50 p-12 text-center">
           <Settings className="h-16 w-16 text-slate-300 mx-auto mb-4" />
           <h3 className="text-xl font-bold text-slate-700 mb-2">No Earnings Settings Found</h3>
-          <p className="text-slate-500">Please run the earnings settings migration to create default settings.</p>
+          <p className="text-slate-500 mb-6">Create the default earnings configuration to get started.</p>
+          <button
+            onClick={seedDefaults}
+            disabled={seeding}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg shadow-purple-500/30 hover:shadow-xl hover:scale-105 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {seeding ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Plus className="h-5 w-5" />
+            )}
+            {seeding ? 'Creating...' : 'Create Default Settings'}
+          </button>
         </div>
       )}
 
