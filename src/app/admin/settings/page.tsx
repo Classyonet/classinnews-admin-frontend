@@ -1279,6 +1279,12 @@ export default function SystemSettingsPage() {
             >
               Commission Settings
             </button>
+            <button
+              onClick={() => window.location.href = '/admin/settings/cache'}
+              className="px-4 py-3 font-semibold text-sm transition-all duration-300 border-b-4 border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
+            >
+              Cache Control
+            </button>
           </div>
 
           {/* Site Settings Sub-tab Content */}
