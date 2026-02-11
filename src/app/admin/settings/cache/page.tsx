@@ -211,6 +211,39 @@ export default function CacheSettingsPage() {
     }
   }
 
+  const handleClearCache = async () => {
+    if (!confirm('This will clear ALL newsportal page caches instantly. All users will load fresh content on their next visit. Continue?')) return
+    setPurging(true)
+    setError(null)
+    setSuccess(null)
+    try {
+      // Bump cache version to invalidate all existing caches
+      const currentVersion = parseInt(settings.cache_version || '1')
+      const newVersion = currentVersion + 1
+      
+      // Also set a cache_cleared_at timestamp so newsportal knows to clear localStorage
+      await Promise.all([
+        fetch(`${API_URL}/api/settings/cache_version`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ value: String(newVersion), type: 'number', category: 'cache' })
+        }),
+        fetch(`${API_URL}/api/settings/cache_cleared_at`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ value: new Date().toISOString(), type: 'string', category: 'cache' })
+        })
+      ])
+      
+      setSettings(prev => ({ ...prev, cache_version: String(newVersion) }))
+      setSuccess(`Cache cleared successfully! Version bumped to v${newVersion}. All newsportal users will load fresh content immediately.`)
+    } catch (err) {
+      setError('Failed to clear cache')
+    } finally {
+      setPurging(false)
+    }
+  }
+
   const handlePurgeCache = async () => {
     if (!confirm('This will increment the cache version, forcing all newsportal users to reload fresh content. Continue?')) return
     setPurging(true)
@@ -316,26 +349,52 @@ export default function CacheSettingsPage() {
         </div>
       )}
 
-      {/* Quick Actions Card */}
-      <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-xl p-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Trash2 className="w-5 h-5 text-orange-600" />
-              Purge All Caches
-            </h3>
-            <p className="text-sm text-gray-600 mt-1">
-              Force all newsportal users to reload fresh content immediately. Current cache version: <span className="font-bold text-orange-700">v{settings.cache_version || '1'}</span>
-            </p>
+      {/* Quick Actions Cards */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        {/* Clear Cache - Instant */}
+        <div className="bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-xl p-6">
+          <div className="flex flex-col gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Trash2 className="w-5 h-5 text-red-600" />
+                Clear Cache
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Instantly clear all newsportal page cache files. Users will load completely fresh content on their next visit.
+              </p>
+            </div>
+            <button
+              onClick={handleClearCache}
+              disabled={purging}
+              className="w-full px-5 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            >
+              {purging ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              {purging ? 'Clearing...' : 'Clear All Cache Now'}
+            </button>
           </div>
-          <button
-            onClick={handlePurgeCache}
-            disabled={purging}
-            className="px-5 py-2.5 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50 transition-colors flex items-center gap-2 whitespace-nowrap"
-          >
-            {purging ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-            {purging ? 'Purging...' : 'Purge All Caches'}
-          </button>
+        </div>
+
+        {/* Purge Cache - Version Bump */}
+        <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-6">
+          <div className="flex flex-col gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <RefreshCw className="w-5 h-5 text-orange-600" />
+                Bump Cache Version
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Increment cache version to invalidate old caches. Current version: <span className="font-bold text-orange-700">v{settings.cache_version || '1'}</span>
+              </p>
+            </div>
+            <button
+              onClick={handlePurgeCache}
+              disabled={purging}
+              className="w-full px-5 py-2.5 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            >
+              {purging ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              {purging ? 'Bumping...' : 'Bump Version'}
+            </button>
+          </div>
         </div>
       </div>
 
