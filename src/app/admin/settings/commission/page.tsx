@@ -36,7 +36,7 @@ const tierConfig = [
 ];
 
 export default function CommissionSettingsPage() {
-  const { token } = useAuth();
+  const { token, loading: authLoading } = useAuth();
   const [settings, setSettings] = useState<CommissionSetting[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -45,13 +45,18 @@ export default function CommissionSettingsPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com';
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
+    if (!authLoading && token) {
+      fetchSettings();
+    } else if (!authLoading) {
+      setLoading(false);
+      setMessage({ type: 'error', text: 'Please login to access commission settings' });
+    }
+  }, [token, authLoading]);
 
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/api/rating/settings`, {
+      const response = await fetch(`${API_URL}/api/rating-settings`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -105,23 +110,28 @@ export default function CommissionSettingsPage() {
       setSaving(true);
       setMessage(null);
 
-      // Save each commission setting
-      for (const setting of settings) {
-        await fetch(`${API_URL}/api/rating/settings`, {
-          method: 'POST',
+      // Ensure all tier settings are persisted, even if not yet in state
+      for (const tier of tierConfig) {
+        const settingValue = getSettingValue(tier.key);
+        const response = await fetch(`${API_URL}/api/rating-settings/${tier.key}`, {
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            settingKey: setting.settingKey,
-            settingValue: setting.settingValue,
+            settingValue: settingValue,
             settingUnit: 'percent',
-            description: setting.description
+            description: `Commission rate for ${tier.name} tier publishers`
           })
         });
+
+        if (!response.ok) {
+          throw new Error(`Failed to save ${tier.key}`);
+        }
       }
 
+      await fetchSettings();
       setMessage({ type: 'success', text: 'Commission settings saved successfully!' });
       setTimeout(() => setMessage(null), 3000);
     } catch (error) {
