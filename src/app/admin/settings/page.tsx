@@ -55,7 +55,6 @@ interface ProhibitedWord {
 interface SubscriberStats {
   totalActive: number;
   totalApproved?: number;
-  totalPending?: number;
   totalUnsubscribed: number;
   subscribersToday: number;
   unsubscribersToday: number;
@@ -350,7 +349,7 @@ function SubscribersTab() {
     <div className="space-y-6">
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="p-6 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200">
             <div className="flex items-center justify-between mb-2">
               <Users className="w-8 h-8 text-green-600" />
@@ -358,15 +357,6 @@ function SubscribersTab() {
             </div>
             <p className="text-2xl font-bold text-slate-900">{stats.totalActive.toLocaleString()}</p>
             <p className="text-sm text-slate-600">Total Active Subscribers</p>
-          </div>
-
-          <div className="p-6 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200">
-            <div className="flex items-center justify-between mb-2">
-              <AlertTriangle className="w-8 h-8 text-amber-600" />
-              <TrendingUp className="w-5 h-5 text-amber-500" />
-            </div>
-            <p className="text-2xl font-bold text-slate-900">{(stats.totalPending || 0).toLocaleString()}</p>
-            <p className="text-sm text-slate-600">Pending Approval</p>
           </div>
 
           <div className="p-6 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200">
@@ -489,218 +479,6 @@ function SubscribersTab() {
           </>
         )}
       </div>
-    </div>
-  );
-}
-
-// Pending Subscribers Tab Component
-function PendingSubscribersTab() {
-  const { token } = useAuth();
-  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [processingId, setProcessingId] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-
-  useEffect(() => {
-    fetchPendingSubscribers();
-  }, [page]);
-
-  const fetchPendingSubscribers = async () => {
-    if (!token) return;
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_URL}/api/notifications/subscribers?status=pending&page=${page}&limit=10`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-      if (data.success && data.data && Array.isArray(data.data.subscribers)) {
-        setSubscribers(data.data.subscribers);
-        setTotalPages(data.data.pagination?.totalPages || 1);
-      } else {
-        setSubscribers([]);
-        setTotalPages(1);
-      }
-    } catch (error) {
-      console.error('Error fetching pending subscribers:', error);
-      setSubscribers([]);
-      setTotalPages(1);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const approveSubscriber = async (id: string) => {
-    if (!token) return;
-    try {
-      setProcessingId(id);
-      const response = await fetch(`${API_URL}/api/notifications/subscribers/${id}/approve`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(errText || 'Failed to approve subscriber');
-      }
-
-      await fetchPendingSubscribers();
-    } catch (error) {
-      console.error('Error approving subscriber:', error);
-      alert('Failed to approve subscriber');
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const rejectSubscriber = async (id: string) => {
-    if (!token) return;
-    if (!confirm('Reject this subscription request?')) return;
-    try {
-      setProcessingId(id);
-      const response = await fetch(`${API_URL}/api/notifications/subscribers/${id}/reject`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(errText || 'Failed to reject subscriber');
-      }
-
-      await fetchPendingSubscribers();
-    } catch (error) {
-      console.error('Error rejecting subscriber:', error);
-      alert('Failed to reject subscriber');
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const parseDeviceInfo = (deviceInfo: string | null) => {
-    if (!deviceInfo) return { browser: 'Unknown', os: 'Unknown' };
-    try {
-      const parsed = JSON.parse(deviceInfo);
-      const ua = parsed.userAgent || '';
-
-      let browser = 'Unknown';
-      if (ua.includes('Chrome')) browser = 'Chrome';
-      else if (ua.includes('Firefox')) browser = 'Firefox';
-      else if (ua.includes('Safari')) browser = 'Safari';
-      else if (ua.includes('Edge')) browser = 'Edge';
-
-      let os = parsed.platform || 'Unknown';
-
-      return { browser, os };
-    } catch {
-      return { browser: 'Unknown', os: 'Unknown' };
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200">
-        <h3 className="font-bold text-slate-900 mb-1">Pending Subscription Requests</h3>
-        <p className="text-sm text-slate-600">
-          Approve requests to activate reader notifications.
-        </p>
-      </div>
-
-      <div className="rounded-2xl border border-slate-200 overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600 mx-auto mb-3"></div>
-            <p className="text-slate-600">Loading pending requests...</p>
-          </div>
-        ) : subscribers.length === 0 ? (
-          <div className="p-12 text-center">
-            <Check className="w-12 h-12 text-green-500 mx-auto mb-3" />
-            <p className="text-slate-700 font-semibold">No pending approvals</p>
-            <p className="text-sm text-slate-500 mt-1">All subscription requests are processed.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">User</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Device</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">IP Address</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Requested</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {subscribers.map((subscriber) => {
-                  const device = parseDeviceInfo(subscriber.device_info);
-                  return (
-                    <tr key={subscriber.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3 text-sm font-medium text-slate-900">
-                        {subscriber.user_id || <span className="text-slate-400 italic">Anonymous</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="text-xs">
-                          <p className="font-semibold text-slate-700">{device.browser}</p>
-                          <p className="text-slate-500">{device.os}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600 font-mono">{subscriber.ip_address}</td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {new Date(subscriber.subscribed_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => approveSubscriber(subscriber.id)}
-                            disabled={processingId === subscriber.id}
-                            className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 disabled:opacity-60"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => rejectSubscriber(subscriber.id)}
-                            disabled={processingId === subscriber.id}
-                            className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 disabled:opacity-60"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2">
-          <button
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="px-3 py-1 rounded-lg border border-slate-300 text-sm disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <span className="px-3 py-1 text-sm text-slate-600">Page {page} of {totalPages}</span>
-          <button
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className="px-3 py-1 rounded-lg border border-slate-300 text-sm disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      )}
     </div>
   );
 }
@@ -963,7 +741,7 @@ export default function SystemSettingsPage() {
     push_new_article_notification: 'true',
     push_require_user_consent: 'true',
     push_desktop_enabled: 'true',
-    push_mobile_enabled: 'false',
+    push_mobile_enabled: 'true',
     push_popup_reappear_days: '7',
   });
 
@@ -1773,7 +1551,7 @@ export default function SystemSettingsPage() {
                   : 'border-transparent text-slate-600 hover:text-slate-900'
               }`}
             >
-              Mobile Notification
+              Mobile Web Notification
             </button>
             <button
               onClick={() => setPushSubTab('desktop')}
@@ -1794,16 +1572,6 @@ export default function SystemSettingsPage() {
               }`}
             >
               Subscribers
-            </button>
-            <button
-              onClick={() => setPushSubTab('pending')}
-              className={`px-4 py-3 font-semibold text-sm transition-all duration-300 border-b-4 ${
-                pushSubTab === 'pending'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Pending Approval
             </button>
             <button
               onClick={() => setPushSubTab('unsubscribers')}
@@ -1931,8 +1699,8 @@ export default function SystemSettingsPage() {
 
               <div className="text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
                 <Bell className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <p className="text-slate-600 font-medium mb-2">Mobile Notification Configuration</p>
-                <p className="text-sm text-slate-500">Coming soon - Configure FCM and APNs settings</p>
+                <p className="text-slate-600 font-medium mb-2">Mobile Web Push is supported</p>
+                <p className="text-sm text-slate-500">Readers on mobile browsers receive article notifications after granting browser permission.</p>
               </div>
 
               <div className="pt-4">
@@ -1997,11 +1765,6 @@ export default function SystemSettingsPage() {
           {/* Subscribers Tab */}
           {pushSubTab === 'subscribers' && (
             <SubscribersTab />
-          )}
-
-          {/* Pending Subscribers Tab */}
-          {pushSubTab === 'pending' && (
-            <PendingSubscribersTab />
           )}
 
           {/* Unsubscribers Tab */}
