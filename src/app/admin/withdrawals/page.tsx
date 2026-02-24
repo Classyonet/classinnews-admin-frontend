@@ -63,6 +63,7 @@ export default function WithdrawalsPage() {
   const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<WithdrawalRequest | null>(null)
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null)
@@ -92,6 +93,7 @@ export default function WithdrawalsPage() {
   const fetchWithdrawals = async () => {
     try {
       setLoading(true)
+      setLoadError(null)
       const url = filterStatus === 'all' 
         ? `${process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com'}/api/withdrawals`
         : `${process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com'}/api/withdrawals?status=${filterStatus}`
@@ -100,11 +102,18 @@ export default function WithdrawalsPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       const data = await response.json()
-      if (data.success) {
-        setWithdrawals(data.data.withdrawals)
+      if (!response.ok || !data.success) {
+        setWithdrawals([])
+        setLoadError(data?.message || 'Failed to fetch withdrawal requests')
+        return
       }
+
+      const rows = Array.isArray(data?.data?.withdrawals) ? data.data.withdrawals : []
+      setWithdrawals(rows)
     } catch (error) {
       console.error('Error fetching withdrawals:', error)
+      setWithdrawals([])
+      setLoadError('Unable to load withdrawal requests')
     } finally {
       setLoading(false)
     }
@@ -327,6 +336,11 @@ export default function WithdrawalsPage() {
 
       {/* Withdrawals Table */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        {loadError && (
+          <div className="mx-4 mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {loadError}
+          </div>
+        )}
         {loading ? (
           <div className="p-12 text-center">
             <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
