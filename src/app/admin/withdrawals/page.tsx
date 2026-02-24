@@ -18,8 +18,16 @@ import {
 interface WithdrawalRequest {
   id: string
   userId: string
-  username: string
-  email: string
+  username?: string
+  email?: string
+  displayName?: string
+  displayEmail?: string
+  displayPhone?: string
+  registeredName?: string
+  paymentPhoneNumber?: string
+  paymentMethod?: string
+  accountNumber?: string
+  bankName?: string
   amount: number
   status: 'pending' | 'approved' | 'rejected' | 'completed'
   requestDate: string
@@ -110,7 +118,20 @@ export default function WithdrawalsPage() {
       const data = await response.json()
       if (data.success) {
         setSelectedWithdrawal(data.data.withdrawal)
-        setPaymentDetails(data.data.paymentDetails)
+        const apiPayment = data.data.paymentDetails || data.data.withdrawal?.paymentDetails || null
+        const fallbackPayment = data.data.withdrawal
+          ? {
+              id: data.data.withdrawal.id,
+              userId: data.data.withdrawal.userId,
+              paymentMethod: data.data.withdrawal.paymentMethod || 'mobile_money',
+              registeredName: data.data.withdrawal.registeredName || data.data.withdrawal.displayName || '',
+              phoneNumber: data.data.withdrawal.paymentPhoneNumber || data.data.withdrawal.displayPhone || '',
+              accountNumber: data.data.withdrawal.accountNumber || undefined,
+              bankName: data.data.withdrawal.bankName || undefined,
+              isComplete: true
+            }
+          : null
+        setPaymentDetails(apiPayment || fallbackPayment)
         setShowDetailsModal(true)
         setNotes('')
       }
@@ -257,7 +278,7 @@ export default function WithdrawalsPage() {
             </div>
             <p className="text-2xl font-bold text-slate-900">{stats.pending}</p>
             <p className="text-sm text-slate-600">Pending Requests</p>
-            <p className="text-xs text-yellow-700 font-semibold mt-1">${stats.pendingAmount.toFixed(2)}</p>
+            <p className="text-xs text-yellow-700 font-semibold mt-1">GHC {stats.pendingAmount.toFixed(2)}</p>
           </div>
 
           <div className="p-6 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200">
@@ -274,7 +295,7 @@ export default function WithdrawalsPage() {
             </div>
             <p className="text-2xl font-bold text-slate-900">{stats.completed}</p>
             <p className="text-sm text-slate-600">Completed</p>
-            <p className="text-xs text-green-700 font-semibold mt-1">${stats.completedAmount.toFixed(2)}</p>
+            <p className="text-xs text-green-700 font-semibold mt-1">GHC {stats.completedAmount.toFixed(2)}</p>
           </div>
 
           <div className="p-6 rounded-xl bg-gradient-to-br from-red-50 to-rose-50 border border-red-200">
@@ -322,6 +343,7 @@ export default function WithdrawalsPage() {
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Publisher</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Payment Identity</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Amount</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Request Date</th>
@@ -333,12 +355,25 @@ export default function WithdrawalsPage() {
                   <tr key={withdrawal.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3">
                       <div>
-                        <p className="font-semibold text-slate-900">{withdrawal.username}</p>
-                        <p className="text-xs text-slate-500">{withdrawal.email}</p>
+                        <p className="font-semibold text-slate-900">{withdrawal.displayName || withdrawal.username || 'Unknown Publisher'}</p>
+                        <p className="text-xs text-slate-500">{withdrawal.displayEmail || withdrawal.email || `User ID: ${withdrawal.userId}`}</p>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-lg font-bold text-green-600">${withdrawal.amount.toFixed(2)}</span>
+                      <div className="space-y-0.5">
+                        <p className="text-xs text-slate-700 font-medium">
+                          Name: {withdrawal.registeredName || '-'}
+                        </p>
+                        <p className="text-xs text-slate-600">
+                          Number: {withdrawal.paymentPhoneNumber || withdrawal.displayPhone || '-'}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          Method: {(withdrawal.paymentMethod || 'mobile_money').replace('_', ' ').toUpperCase()}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-lg font-bold text-green-600">GHC {withdrawal.amount.toFixed(2)}</span>
                     </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(withdrawal.status)}`}>
@@ -391,11 +426,19 @@ export default function WithdrawalsPage() {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-slate-600">Name:</p>
-                    <p className="font-semibold">{selectedWithdrawal.username}</p>
+                    <p className="font-semibold">{selectedWithdrawal.displayName || selectedWithdrawal.username || 'Unknown Publisher'}</p>
                   </div>
                   <div>
                     <p className="text-slate-600">Email:</p>
-                    <p className="font-semibold">{selectedWithdrawal.email}</p>
+                    <p className="font-semibold">{selectedWithdrawal.displayEmail || selectedWithdrawal.email || `User ID: ${selectedWithdrawal.userId}`}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-600">Registered Name:</p>
+                    <p className="font-semibold">{selectedWithdrawal.registeredName || paymentDetails?.registeredName || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-600">Payment Number:</p>
+                    <p className="font-semibold">{selectedWithdrawal.paymentPhoneNumber || paymentDetails?.phoneNumber || selectedWithdrawal.displayPhone || '-'}</p>
                   </div>
                 </div>
               </div>
@@ -409,7 +452,7 @@ export default function WithdrawalsPage() {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-slate-600">Amount:</p>
-                    <p className="text-2xl font-bold text-green-600">${selectedWithdrawal.amount.toFixed(2)}</p>
+                    <p className="text-2xl font-bold text-green-600">GHC {selectedWithdrawal.amount.toFixed(2)}</p>
                   </div>
                   <div>
                     <p className="text-slate-600">Status:</p>
