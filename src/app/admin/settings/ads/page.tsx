@@ -60,7 +60,7 @@ export default function AdsSettingsPage() {
     placement_name: '',
     display_name: '',
     page_type: 'homepage',
-    position: 'top',
+    position: 'content_top',
     width: '728px',
     height: '90px',
     ad_type: 'code',
@@ -188,7 +188,7 @@ export default function AdsSettingsPage() {
           placement_name: '',
           display_name: '',
           page_type: 'homepage',
-          position: 'top',
+          position: 'content_top',
           width: '728px',
           height: '90px',
           ad_type: 'code',
@@ -580,7 +580,6 @@ export default function AdsSettingsPage() {
                   <select value={newAd.position}
                     onChange={(e) => setNewAd({ ...newAd, position: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    <option value="top">Top Banner</option>
                     <option value="sidebar_top">Sidebar Top</option>
                     <option value="sidebar_middle">Sidebar Middle</option>
                     <option value="sidebar_bottom">Sidebar Bottom</option>
@@ -588,7 +587,6 @@ export default function AdsSettingsPage() {
                     <option value="content_bottom">Content Bottom</option>
                     <option value="inline_1">Inline 1</option>
                     <option value="inline_2">Inline 2</option>
-                    <option value="bottom">Bottom Banner</option>
                   </select>
                 </div>
               </div>
