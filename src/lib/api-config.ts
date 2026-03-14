@@ -3,19 +3,27 @@
  * Single source of truth for API URL configuration
  */
 
-export const API_URL = (() => {
-  const url = 
-    process.env.NEXT_PUBLIC_API_URL || 
-    process.env.NEXT_PUBLIC_ADMIN_API_URL || 
-    'https://classinnews-admin-backend.onrender.com';
-  
-  // Never use localhost in production
-  if (typeof window !== 'undefined' && url.includes('localhost')) {
-    return 'https://classinnews-admin-backend.onrender.com';
+const FALLBACK_API_URL = 'https://admin-api.147.93.53.76.sslip.io';
+
+const sanitizeApiUrl = (url?: string): string => {
+  const normalized = (url || '').trim().replace(/\/+$/, '');
+
+  if (!normalized) {
+    return FALLBACK_API_URL;
   }
-  
-  // Remove trailing slashes
-  return url.replace(/\/+$/, '');
+
+  if (normalized.includes('localhost') || normalized.includes('onrender.com')) {
+    return FALLBACK_API_URL;
+  }
+
+  return normalized;
+};
+
+export const API_URL = (() => {
+  return sanitizeApiUrl(
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_ADMIN_API_URL
+  );
 })();
 
 // Helper to construct API endpoints

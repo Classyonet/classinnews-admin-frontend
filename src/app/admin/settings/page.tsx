@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
+import { getApiUrl } from '@/lib/api-config';
 import { settingsAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com';
+const API_URL = getApiUrl();
 
 import { 
   Settings as SettingsIcon, 
@@ -1347,7 +1348,7 @@ export default function SystemSettingsPage() {
                     <div className="mt-3 p-3 bg-white rounded-lg border border-slate-200">
                       <p className="text-xs font-semibold text-slate-600 mb-2">Current Logo:</p>
                       <img 
-                        src={settings.site_logo_url.startsWith('http') ? settings.site_logo_url : `${process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com'}${settings.site_logo_url}`}
+                        src={settings.site_logo_url.startsWith('http') ? settings.site_logo_url : `${API_URL}${settings.site_logo_url}`}
                         alt="Logo Preview" 
                         className="h-12 object-contain"
                         onError={(e) => {
@@ -1384,7 +1385,7 @@ export default function SystemSettingsPage() {
                     <div className="mt-3 p-3 bg-white rounded-lg border border-slate-200">
                       <p className="text-xs font-semibold text-slate-600 mb-2">Current Mobile Logo:</p>
                       <img 
-                        src={settings.site_mobile_logo_url.startsWith('http') ? settings.site_mobile_logo_url : `${process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com'}${settings.site_mobile_logo_url}`}
+                        src={settings.site_mobile_logo_url.startsWith('http') ? settings.site_mobile_logo_url : `${API_URL}${settings.site_mobile_logo_url}`}
                         alt="Mobile Logo Preview" 
                         className="h-10 object-contain"
                         onError={(e) => {
@@ -1421,7 +1422,7 @@ export default function SystemSettingsPage() {
                     <div className="mt-3 p-3 bg-white rounded-lg border border-slate-200">
                       <p className="text-xs font-semibold text-slate-600 mb-2">Current Favicon:</p>
                       <img 
-                        src={settings.site_favicon_url.startsWith('http') ? settings.site_favicon_url : `${process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com'}${settings.site_favicon_url}`}
+                        src={settings.site_favicon_url.startsWith('http') ? settings.site_favicon_url : `${API_URL}${settings.site_favicon_url}`}
                         alt="Favicon Preview" 
                         className="h-8 w-8 object-contain"
                         onError={(e) => {

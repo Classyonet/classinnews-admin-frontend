@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect } from 'react';
+import { getApiUrl } from '@/lib/api-config';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com';
+const API_URL = getApiUrl();
 
 export function DynamicFavicon() {
   useEffect(() => {

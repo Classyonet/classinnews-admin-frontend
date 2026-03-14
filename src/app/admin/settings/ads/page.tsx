@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
+import { getApiUrl } from '@/lib/api-config';
 import { Search, Plus, Power, PowerOff, Save, Eye, Code2, BarChart3, Trash2, ArrowLeft } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com';
+const API_URL = getApiUrl();
 
 const POSITION_LABELS: Record<string, string> = {
   top: 'Top Banner',

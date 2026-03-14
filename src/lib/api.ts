@@ -1,12 +1,7 @@
+import { API_URL as RESOLVED_API_URL } from './api-config';
+
 // Prefer the standard NEXT_PUBLIC_API_URL for compatibility, fall back to the admin-specific
-const getApiUrl = () => {
-  const url = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_ADMIN_API_URL || 'https://classinnews-admin-backend.onrender.com';
-  // Never use localhost in production
-  if (typeof window !== 'undefined' && url.includes('localhost')) {
-    return 'https://classinnews-admin-backend.onrender.com';
-  }
-  return url.replace(/\/+$/, '');
-};
+const getApiUrl = () => RESOLVED_API_URL;
 const API_URL = getApiUrl();
 
 interface ApiFetchOptions extends RequestInit {

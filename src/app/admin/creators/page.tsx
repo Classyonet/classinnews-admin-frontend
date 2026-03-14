@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/auth-context'
+import { getApiUrl } from '@/lib/api-config'
 import { Button } from '@/components/ui/button'
 import { MessageModal } from '@/components/ui/message-modal'
 import { usersAPI } from '@/lib/api'
@@ -18,6 +19,7 @@ interface Creator {
 
 export default function CreatorsPage() {
   const { token } = useAuth()
+  const API_URL = getApiUrl()
   const [creators, setCreators] = useState<Creator[]>([])
   const [loading, setLoading] = useState(false)
   const [messageModalOpen, setMessageModalOpen] = useState(false)
@@ -55,7 +57,7 @@ export default function CreatorsPage() {
   async function handleAction(id: string, action: string) {
     setActionLoading(`${action}-${id}`)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/creators/${id}`, {
+      const response = await fetch(`${API_URL}/api/creators/${id}`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json', 
@@ -86,7 +88,7 @@ export default function CreatorsPage() {
     }
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/creators/${id}`, {
+      const response = await fetch(`${API_URL}/api/creators/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -108,7 +110,7 @@ export default function CreatorsPage() {
     setCreateLoading(true)
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/creators`, {
+      const response = await fetch(`${API_URL}/api/creators`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -148,8 +150,7 @@ export default function CreatorsPage() {
         body: body.trim()
       })
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com'
-      const response = await fetch(`${apiUrl}/api/messages`, {
+      const response = await fetch(`${API_URL}/api/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/auth-context'
+import { getApiUrl } from '@/lib/api-config'
 import {
   Database,
   RefreshCw,
@@ -19,7 +20,7 @@ import {
   Settings
 } from 'lucide-react'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com'
+const API_URL = getApiUrl()
 
 interface CacheSetting {
   key: string

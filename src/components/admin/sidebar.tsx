@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { getApiUrl } from '@/lib/api-config';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -41,7 +42,7 @@ export default function AdminSidebar() {
     withdrawals: 0,
   });
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com';
+  const API_URL = getApiUrl();
 
   useEffect(() => {
     // Fetch notification counts

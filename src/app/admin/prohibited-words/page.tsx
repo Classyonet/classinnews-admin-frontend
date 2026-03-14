@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { getApiUrl } from '@/lib/api-config';
 import { Shield, Plus, Trash2, Check, X, AlertTriangle } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://classinnews-admin-backend.onrender.com';
+const API_URL = getApiUrl();
 
 interface ProhibitedWord {
   id: string;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getApiUrl } from '@/lib/api-config';
 
 export default function DebugPage() {
   const [apiUrl, setApiUrl] = useState<string>('');
@@ -8,7 +9,7 @@ export default function DebugPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setApiUrl(process.env.NEXT_PUBLIC_API_URL || 'not set');
+    setApiUrl(getApiUrl());
   }, []);
 
   const testLogin = async () => {
