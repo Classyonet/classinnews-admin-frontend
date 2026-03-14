@@ -737,6 +737,17 @@ export default function SystemSettingsPage() {
     homepage_carousel_interval: '5',
     homepage_carousel_effect: 'cube',
     homepage_carousel_show_title: 'true',
+    homepage_sidebar_newsletter_title: 'Stay Updated',
+    homepage_sidebar_newsletter_description: 'Subscribe to our newsletter for daily updates',
+    homepage_sidebar_newsletter_placeholder: 'Your email address',
+    homepage_sidebar_newsletter_button_text: 'Subscribe',
+    homepage_sidebar_newsletter_url: '',
+    homepage_sidebar_social_title: 'Follow Us',
+    social_facebook_url: '',
+    social_twitter_url: '',
+    social_instagram_url: '',
+    social_youtube_url: '',
+    social_email_url: '',
     // Push notification settings
     push_notifications_enabled: 'true',
     push_new_article_notification: 'true',
@@ -896,6 +907,17 @@ export default function SystemSettingsPage() {
     homepage_carousel_interval: { type: 'number', category: 'homepage' },
     homepage_carousel_effect: { type: 'string', category: 'homepage' },
     homepage_carousel_show_title: { type: 'boolean', category: 'homepage' },
+    homepage_sidebar_newsletter_title: { type: 'string', category: 'homepage' },
+    homepage_sidebar_newsletter_description: { type: 'string', category: 'homepage' },
+    homepage_sidebar_newsletter_placeholder: { type: 'string', category: 'homepage' },
+    homepage_sidebar_newsletter_button_text: { type: 'string', category: 'homepage' },
+    homepage_sidebar_newsletter_url: { type: 'string', category: 'homepage' },
+    homepage_sidebar_social_title: { type: 'string', category: 'homepage' },
+    social_facebook_url: { type: 'string', category: 'homepage' },
+    social_twitter_url: { type: 'string', category: 'homepage' },
+    social_instagram_url: { type: 'string', category: 'homepage' },
+    social_youtube_url: { type: 'string', category: 'homepage' },
+    social_email_url: { type: 'string', category: 'homepage' },
   };
 
   const handleSaveSettings = async () => {
@@ -1434,6 +1456,140 @@ export default function SystemSettingsPage() {
                       <p className="text-xs text-slate-500 mt-1">{settings.site_favicon_url}</p>
                     </div>
                   )}
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-200 space-y-4">
+                <div>
+                  <h4 className="font-bold text-slate-800">Homepage Sidebar Widgets</h4>
+                  <p className="text-sm text-slate-600 mt-1">
+                    Control the newsletter call-to-action and social links shown on the public news portal.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Newsletter Title</label>
+                    <Input
+                      type="text"
+                      value={settings.homepage_sidebar_newsletter_title}
+                      onChange={(e) => setSettings({ ...settings, homepage_sidebar_newsletter_title: e.target.value })}
+                      className="border-slate-200 focus:border-purple-500 focus:ring-purple-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Newsletter Button Text</label>
+                    <Input
+                      type="text"
+                      value={settings.homepage_sidebar_newsletter_button_text}
+                      onChange={(e) => setSettings({ ...settings, homepage_sidebar_newsletter_button_text: e.target.value })}
+                      className="border-slate-200 focus:border-purple-500 focus:ring-purple-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Newsletter Description</label>
+                  <Input
+                    type="text"
+                    value={settings.homepage_sidebar_newsletter_description}
+                    onChange={(e) => setSettings({ ...settings, homepage_sidebar_newsletter_description: e.target.value })}
+                    className="border-slate-200 focus:border-purple-500 focus:ring-purple-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Newsletter Input Placeholder</label>
+                    <Input
+                      type="text"
+                      value={settings.homepage_sidebar_newsletter_placeholder}
+                      onChange={(e) => setSettings({ ...settings, homepage_sidebar_newsletter_placeholder: e.target.value })}
+                      className="border-slate-200 focus:border-purple-500 focus:ring-purple-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Newsletter Destination URL</label>
+                    <Input
+                      type="text"
+                      value={settings.homepage_sidebar_newsletter_url}
+                      onChange={(e) => setSettings({ ...settings, homepage_sidebar_newsletter_url: e.target.value })}
+                      placeholder="https://example.com/newsletter?email={email}"
+                      className="border-slate-200 focus:border-purple-500 focus:ring-purple-500"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                      Use <code>{'{email}'}</code> in the URL if the destination accepts a subscriber email.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Social Section Title</label>
+                  <Input
+                    type="text"
+                    value={settings.homepage_sidebar_social_title}
+                    onChange={(e) => setSettings({ ...settings, homepage_sidebar_social_title: e.target.value })}
+                    className="border-slate-200 focus:border-purple-500 focus:ring-purple-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Facebook URL</label>
+                    <Input
+                      type="text"
+                      value={settings.social_facebook_url}
+                      onChange={(e) => setSettings({ ...settings, social_facebook_url: e.target.value })}
+                      placeholder="https://facebook.com/yourpage"
+                      className="border-slate-200 focus:border-purple-500 focus:ring-purple-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Twitter/X URL</label>
+                    <Input
+                      type="text"
+                      value={settings.social_twitter_url}
+                      onChange={(e) => setSettings({ ...settings, social_twitter_url: e.target.value })}
+                      placeholder="https://x.com/yourhandle"
+                      className="border-slate-200 focus:border-purple-500 focus:ring-purple-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Instagram URL</label>
+                    <Input
+                      type="text"
+                      value={settings.social_instagram_url}
+                      onChange={(e) => setSettings({ ...settings, social_instagram_url: e.target.value })}
+                      placeholder="https://instagram.com/yourhandle"
+                      className="border-slate-200 focus:border-purple-500 focus:ring-purple-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">YouTube URL</label>
+                    <Input
+                      type="text"
+                      value={settings.social_youtube_url}
+                      onChange={(e) => setSettings({ ...settings, social_youtube_url: e.target.value })}
+                      placeholder="https://youtube.com/@yourchannel"
+                      className="border-slate-200 focus:border-purple-500 focus:ring-purple-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Email or Mailto URL</label>
+                    <Input
+                      type="text"
+                      value={settings.social_email_url}
+                      onChange={(e) => setSettings({ ...settings, social_email_url: e.target.value })}
+                      placeholder="mailto:hello@classinnews.com"
+                      className="border-slate-200 focus:border-purple-500 focus:ring-purple-500"
+                    />
+                  </div>
                 </div>
               </div>
 
