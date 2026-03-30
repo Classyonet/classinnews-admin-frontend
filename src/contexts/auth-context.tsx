@@ -2,15 +2,23 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authAPI } from '@/lib/api';
+import {
+  ADMIN_SESSION_PLACEHOLDER,
+  clearStoredAdminSession,
+  fetchCurrentAdmin,
+  getStoredAdminUser,
+  logoutAdminSession,
+  storeAdminUser,
+} from '@/lib/admin-session';
 
 interface User {
   id: string;
-  email: string;
-  username: string;
-  role: string;
-  firstName?: string;
-  lastName?: string;
-  avatarUrl?: string;
+  email?: string | null;
+  username?: string | null;
+  role?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  avatarUrl?: string | null;
 }
 
 interface AuthContextType {
@@ -18,7 +26,7 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,45 +37,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored token on mount
-    const storedToken = localStorage.getItem('admin_token');
-    if (storedToken) {
-      setToken(storedToken);
-      fetchUser(storedToken);
-    } else {
-      setLoading(false);
+    const cachedUser = getStoredAdminUser();
+    if (cachedUser) {
+      setUser(cachedUser);
+      setToken(ADMIN_SESSION_PLACEHOLDER);
     }
-  }, []);
 
-  const fetchUser = async (authToken: string) => {
-    try {
-      const response = await authAPI.getMe(authToken);
-      setUser(response.data);
-    } catch (error) {
-      console.error('Failed to fetch user:', error);
-      localStorage.removeItem('admin_token');
-      setToken(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const checkAuth = async () => {
+      try {
+        const currentUser = await fetchCurrentAdmin();
+        if (currentUser) {
+          setUser(currentUser as User);
+          setToken(ADMIN_SESSION_PLACEHOLDER);
+        } else {
+          setUser(null);
+          setToken(null);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+        clearStoredAdminSession();
+        setUser(null);
+        setToken(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   const login = async (email: string, password: string) => {
     try {
       const response = await authAPI.login(email, password);
-      const { token: newToken, user: userData } = response.data;
-      
-      // Store token
-      localStorage.setItem('admin_token', newToken);
-      setToken(newToken);
+      const userData = response.data?.user || response.user;
+      storeAdminUser(userData);
+      setToken(ADMIN_SESSION_PLACEHOLDER);
       setUser(userData);
     } catch (error) {
       throw error;
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('admin_token');
+  const logout = async () => {
+    await logoutAdminSession();
     setToken(null);
     setUser(null);
   };

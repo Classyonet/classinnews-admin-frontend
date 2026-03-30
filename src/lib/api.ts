@@ -1,4 +1,5 @@
 import { API_URL as RESOLVED_API_URL } from './api-config';
+import { adminAuthFetch, ADMIN_SESSION_PLACEHOLDER, getStoredAdminUser } from './admin-session';
 
 // Prefer the standard NEXT_PUBLIC_API_URL for compatibility, fall back to the admin-specific
 const getApiUrl = () => RESOLVED_API_URL;
@@ -16,7 +17,7 @@ async function apiFetch(endpoint: string, options: ApiFetchOptions = {}) {
     ...(fetchOptions.headers as Record<string, string>),
   };
 
-  if (token) {
+  if (token && token !== ADMIN_SESSION_PLACEHOLDER) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
@@ -24,6 +25,7 @@ async function apiFetch(endpoint: string, options: ApiFetchOptions = {}) {
   const path = endpoint.startsWith('/api') && base.endsWith('/api') ? endpoint.replace(/^\/api/, '') : endpoint;
   const response = await fetch(`${base}${path}`, {
     ...fetchOptions,
+    credentials: 'include',
     headers,
   });
 
@@ -45,7 +47,7 @@ export const authAPI = {
     });
   },
 
-  getMe: async (token: string) => {
+  getMe: async (token?: string) => {
     return apiFetch('/api/auth/me', { token });
   },
 };

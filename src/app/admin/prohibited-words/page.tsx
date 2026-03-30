@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getApiUrl } from '@/lib/api-config';
+import { adminAuthFetch } from '@/lib/admin-session';
 import { Shield, Plus, Trash2, Check, X, AlertTriangle } from 'lucide-react';
 
 const API_URL = getApiUrl();
@@ -28,10 +29,7 @@ export default function ProhibitedWordsPage() {
 
   const fetchWords = async () => {
     try {
-      const token = localStorage.getItem('admin_token');
-      const res = await fetch(`${API_URL}/api/prohibited-words`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = await adminAuthFetch(`${API_URL}/api/prohibited-words`);
 
       if (res.ok) {
         const data = await res.json();
@@ -52,11 +50,9 @@ export default function ProhibitedWordsPage() {
 
     setError('');
     try {
-      const token = localStorage.getItem('admin_token');
-      const res = await fetch(`${API_URL}/api/prohibited-words`, {
+      const res = await adminAuthFetch(`${API_URL}/api/prohibited-words`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ word: newWord.trim() })
@@ -80,11 +76,9 @@ export default function ProhibitedWordsPage() {
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      const token = localStorage.getItem('admin_token');
-      const res = await fetch(`${API_URL}/api/prohibited-words/${id}`, {
+      const res = await adminAuthFetch(`${API_URL}/api/prohibited-words/${id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ isActive: !currentStatus })
@@ -104,10 +98,8 @@ export default function ProhibitedWordsPage() {
     if (!confirm('Are you sure you want to delete this word?')) return;
 
     try {
-      const token = localStorage.getItem('admin_token');
-      const res = await fetch(`${API_URL}/api/prohibited-words/${id}`, {
+      const res = await adminAuthFetch(`${API_URL}/api/prohibited-words/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (res.ok) {

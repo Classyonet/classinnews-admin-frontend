@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getApiUrl } from '@/lib/api-config';
+import { adminAuthFetch } from '@/lib/admin-session';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -48,26 +49,23 @@ export default function AdminSidebar() {
     // Fetch notification counts
     const fetchNotifications = async () => {
       try {
-        const token = localStorage.getItem('admin_token') || '';
-        const authHeaders: Record<string, string> = token ? { 'Authorization': `Bearer ${token}` } : {};
-
         // Fetch pending moderation count
-        const moderationRes = await fetch(`${API_URL}/api/moderation/pending-count`, { headers: authHeaders });
+        const moderationRes = await adminAuthFetch(`${API_URL}/api/moderation/pending-count`);
         if (!moderationRes.ok) throw new Error('Failed to fetch moderation count');
         const moderationData = await moderationRes.json();
         
         // Fetch pending articles count
-        const articlesRes = await fetch(`${API_URL}/api/articles/pending-count`, { headers: authHeaders });
+        const articlesRes = await adminAuthFetch(`${API_URL}/api/articles/pending-count`);
         if (!articlesRes.ok) throw new Error('Failed to fetch articles count');
         const articlesData = await articlesRes.json();
         
         // Fetch new users awaiting approval
-        const usersRes = await fetch(`${API_URL}/api/users/pending-count`, { headers: authHeaders });
+        const usersRes = await adminAuthFetch(`${API_URL}/api/users/pending-count`);
         if (!usersRes.ok) throw new Error('Failed to fetch users count');
         const usersData = await usersRes.json();
 
         // Fetch pending withdrawals count
-        const withdrawalsRes = await fetch(`${API_URL}/api/withdrawals?status=pending`, { headers: authHeaders });
+        const withdrawalsRes = await adminAuthFetch(`${API_URL}/api/withdrawals?status=pending`);
         const withdrawalsData = await withdrawalsRes.json();
         const withdrawalsCount = withdrawalsData.success ? withdrawalsData.data.withdrawals.length : 0;
 
