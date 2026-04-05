@@ -4,6 +4,7 @@
  */
 
 const FALLBACK_API_URL = 'https://admin-api.classinnews.com';
+const ALLOWED_PRODUCTION_HOSTS = new Set(['admin-api.classinnews.com']);
 
 const sanitizeApiUrl = (url?: string): string => {
   const normalized = (url || '').trim().replace(/\/+$/, '');
@@ -12,7 +13,24 @@ const sanitizeApiUrl = (url?: string): string => {
     return FALLBACK_API_URL;
   }
 
-  return normalized;
+  if (process.env.NODE_ENV !== 'production') {
+    return normalized;
+  }
+
+  try {
+    const parsed = new URL(normalized);
+
+    if (
+      parsed.protocol === 'https:' &&
+      ALLOWED_PRODUCTION_HOSTS.has(parsed.hostname.toLowerCase())
+    ) {
+      return normalized;
+    }
+  } catch {
+    // Fall through to the known-good production domain below.
+  }
+
+  return FALLBACK_API_URL;
 };
 
 export const API_URL = (() => {
