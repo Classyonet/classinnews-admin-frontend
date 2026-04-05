@@ -3,16 +3,12 @@
  * Single source of truth for API URL configuration
  */
 
-const FALLBACK_API_URL = 'https://admin-api.147.93.53.76.sslip.io';
+const FALLBACK_API_URL = 'https://admin-api.classinnews.com';
 
 const sanitizeApiUrl = (url?: string): string => {
   const normalized = (url || '').trim().replace(/\/+$/, '');
 
   if (!normalized) {
-    return FALLBACK_API_URL;
-  }
-
-  if (normalized.includes('localhost') || normalized.includes('onrender.com')) {
     return FALLBACK_API_URL;
   }
 
