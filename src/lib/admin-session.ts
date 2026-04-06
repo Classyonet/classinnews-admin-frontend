@@ -115,8 +115,23 @@ export async function adminAuthFetch(input: string, init: RequestInit = {}): Pro
   return fetch(url, {
     ...init,
     credentials: 'include',
-    headers: {
-      ...(init.headers || {}),
-    },
+    headers: init.headers,
+  });
+}
+
+export async function adminApiFetch(
+  input: string,
+  init: RequestInit = {},
+  token?: string | null
+): Promise<Response> {
+  const headers = new Headers(init.headers || {});
+
+  if (token && token !== ADMIN_SESSION_PLACEHOLDER) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  return adminAuthFetch(input, {
+    ...init,
+    headers,
   });
 }

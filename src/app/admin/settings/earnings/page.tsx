@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/auth-context'
 import { getApiUrl } from '@/lib/api-config'
+import { adminApiFetch } from '@/lib/admin-session'
 import { 
   DollarSign, 
   Eye, 
@@ -68,12 +69,11 @@ export default function EarningsSettingsPage() {
         throw new Error('No authentication token available. Please login again.')
       }
       
-      const response = await fetch(apiUrl, {
+      const response = await adminApiFetch(apiUrl, {
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
-      })
+      }, token)
       
       console.log('[Earnings Settings] Response status:', response.status)
       
@@ -118,16 +118,15 @@ export default function EarningsSettingsPage() {
 
     setSaving(true)
     try {
-      const response = await fetch(`${API_URL}/api/earnings-settings/${key}`, {
+      const response = await adminApiFetch(`${API_URL}/api/earnings-settings/${key}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           settingValue: editedSettings[key]
         })
-      })
+      }, token)
 
       if (response.ok) {
         await fetchSettings()
@@ -149,13 +148,12 @@ export default function EarningsSettingsPage() {
   const seedDefaults = async () => {
     setSeeding(true)
     try {
-      const response = await fetch(`${API_URL}/api/earnings-settings/seed`, {
+      const response = await adminApiFetch(`${API_URL}/api/earnings-settings/seed`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
-      })
+      }, token)
 
       if (response.ok) {
         const result = await response.json()

@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { adminApiFetch } from '@/lib/admin-session'
 import { toast } from 'sonner'
 import { Plus, Edit, Trash2, ArrowUp, ArrowDown } from 'lucide-react'
 import { API_URL } from '@/lib/api-config'
@@ -50,9 +51,7 @@ export default function TrendingTopicsAdminPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_URL}/api/trending-topics`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await adminApiFetch(`${API_URL}/api/trending-topics`, {}, token);
 
       if (!res.ok) {
         throw new Error('Failed to fetch topics');
@@ -133,14 +132,13 @@ export default function TrendingTopicsAdminPage() {
       
       const method = editing ? 'PUT' : 'POST';
       
-      const res = await fetch(url, {
+      const res = await adminApiFetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(form)
-      });
+      }, token);
       
       if (!res.ok) {
         let msg = 'Failed to save topic';
@@ -165,10 +163,9 @@ export default function TrendingTopicsAdminPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`${API_URL}/api/trending-topics/${id}`, {
+      const res = await adminApiFetch(`${API_URL}/api/trending-topics/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      }, token);
       
       if (!res.ok) throw new Error('Failed to delete topic');
       
@@ -183,14 +180,13 @@ export default function TrendingTopicsAdminPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`${API_URL}/api/trending-topics/${id}`, {
+      const res = await adminApiFetch(`${API_URL}/api/trending-topics/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ isActive: !isActive }),
-      });
+      }, token);
       
       if (!res.ok) throw new Error('Failed to update status');
       
@@ -205,11 +201,10 @@ export default function TrendingTopicsAdminPage() {
     if (!token) return;
 
     try {
-      await fetch(`${API_URL}/api/trending-topics/reorder`, {
+      await adminApiFetch(`${API_URL}/api/trending-topics/reorder`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ 
           idA: a.id, 
@@ -217,7 +212,7 @@ export default function TrendingTopicsAdminPage() {
           idB: b.id, 
           orderB: a.order 
         })
-      });
+      }, token);
       
       fetchTopics();
     } catch (err) {

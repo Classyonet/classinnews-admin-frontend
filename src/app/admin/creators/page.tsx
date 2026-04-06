@@ -6,6 +6,7 @@ import { getApiUrl } from '@/lib/api-config'
 import { Button } from '@/components/ui/button'
 import { MessageModal } from '@/components/ui/message-modal'
 import { usersAPI } from '@/lib/api'
+import { adminApiFetch } from '@/lib/admin-session'
 import { toast } from 'sonner'
 
 interface Creator {
@@ -57,14 +58,13 @@ export default function CreatorsPage() {
   async function handleAction(id: string, action: string) {
     setActionLoading(`${action}-${id}`)
     try {
-      const response = await fetch(`${API_URL}/api/creators/${id}`, {
+      const response = await adminApiFetch(`${API_URL}/api/creators/${id}`, {
         method: 'PATCH',
         headers: { 
-          'Content-Type': 'application/json', 
-          Authorization: `Bearer ${token}` 
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ action })
-      })
+      }, token)
       
       const data = await response.json()
       
@@ -88,10 +88,9 @@ export default function CreatorsPage() {
     }
     
     try {
-      const response = await fetch(`${API_URL}/api/creators/${id}`, {
+      const response = await adminApiFetch(`${API_URL}/api/creators/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      }, token)
       
       if (!response.ok) {
         throw new Error('Delete failed')
@@ -110,14 +109,13 @@ export default function CreatorsPage() {
     setCreateLoading(true)
 
     try {
-      const response = await fetch(`${API_URL}/api/creators`, {
+      const response = await adminApiFetch(`${API_URL}/api/creators`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(formData)
-      })
+      }, token)
 
       const data = await response.json()
 
@@ -150,11 +148,10 @@ export default function CreatorsPage() {
         body: body.trim()
       })
 
-      const response = await fetch(`${API_URL}/api/messages`, {
+      const response = await adminApiFetch(`${API_URL}/api/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           toId: selectedCreator.id,
@@ -162,7 +159,7 @@ export default function CreatorsPage() {
           body: body.trim(),
           fromRole: 'admin'
         })
-      })
+      }, token)
 
       const data = await response.json()
       console.log('Message response:', data)

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { getApiUrl } from '@/lib/api-config';
+import { adminApiFetch } from '@/lib/admin-session';
 import { 
   Percent, 
   Star, 
@@ -57,11 +58,7 @@ export default function CommissionSettingsPage() {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/api/rating-settings`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await adminApiFetch(`${API_URL}/api/rating-settings`, {}, token);
       
       if (response.ok) {
         const data = await response.json();
@@ -114,18 +111,17 @@ export default function CommissionSettingsPage() {
       // Ensure all tier settings are persisted, even if not yet in state
       for (const tier of tierConfig) {
         const settingValue = getSettingValue(tier.key);
-        const response = await fetch(`${API_URL}/api/rating-settings/${tier.key}`, {
+        const response = await adminApiFetch(`${API_URL}/api/rating-settings/${tier.key}`, {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             settingValue: settingValue,
             settingUnit: 'percent',
             description: `Commission rate for ${tier.name} tier publishers`
           })
-        });
+        }, token);
 
         if (!response.ok) {
           throw new Error(`Failed to save ${tier.key}`);

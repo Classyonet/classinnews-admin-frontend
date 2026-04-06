@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/auth-context'
 import { getApiUrl } from '@/lib/api-config'
+import { adminApiFetch } from '@/lib/admin-session'
 import {
   Database,
   RefreshCw,
@@ -157,9 +158,7 @@ export default function CacheSettingsPage() {
     try {
       setLoading(true)
       setError(null)
-      const res = await fetch(`${API_URL}/api/settings?category=cache`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
+      const res = await adminApiFetch(`${API_URL}/api/settings?category=cache`, {}, token)
       const data = await res.json()
       if (data.success) {
         const settingsMap: Record<string, string> = {}
@@ -190,18 +189,17 @@ export default function CacheSettingsPage() {
     try {
       for (const def of DEFAULT_CACHE_SETTINGS) {
         const value = settings[def.key] ?? def.value
-        await fetch(`${API_URL}/api/settings/${def.key}`, {
+        await adminApiFetch(`${API_URL}/api/settings/${def.key}`, {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             value: String(value),
             type: def.type === 'boolean' ? 'boolean' : 'number',
             category: 'cache'
           })
-        })
+        }, token)
       }
       setSuccess('Cache settings saved successfully!')
       setHasChanges(false)
@@ -224,16 +222,16 @@ export default function CacheSettingsPage() {
       
       // Also set a cache_cleared_at timestamp so newsportal knows to clear localStorage
       await Promise.all([
-        fetch(`${API_URL}/api/settings/cache_version`, {
+        adminApiFetch(`${API_URL}/api/settings/cache_version`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ value: String(newVersion), type: 'number', category: 'cache' })
-        }),
-        fetch(`${API_URL}/api/settings/cache_cleared_at`, {
+        }, token),
+        adminApiFetch(`${API_URL}/api/settings/cache_cleared_at`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ value: new Date().toISOString(), type: 'string', category: 'cache' })
-        })
+        }, token)
       ])
       
       setSettings(prev => ({ ...prev, cache_version: String(newVersion) }))
@@ -253,18 +251,17 @@ export default function CacheSettingsPage() {
     try {
       const currentVersion = parseInt(settings.cache_version || '1')
       const newVersion = currentVersion + 1
-      await fetch(`${API_URL}/api/settings/cache_version`, {
+      await adminApiFetch(`${API_URL}/api/settings/cache_version`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           value: String(newVersion),
           type: 'number',
           category: 'cache'
         })
-      })
+      }, token)
       setSettings(prev => ({ ...prev, cache_version: String(newVersion) }))
       setSuccess(`Cache purged! Version bumped to ${newVersion}. Newsportal users will receive fresh content.`)
     } catch (err) {

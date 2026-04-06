@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/auth-context'
 import { getApiUrl } from '@/lib/api-config'
+import { adminApiFetch } from '@/lib/admin-session'
 import { 
   DollarSign, 
   Clock, 
@@ -80,9 +81,7 @@ export default function WithdrawalsPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/withdrawals/stats/summary`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
+      const response = await adminApiFetch(`${API_URL}/api/withdrawals/stats/summary`, {}, token)
       const data = await response.json()
       if (data.success) {
         setStats(data.data)
@@ -100,9 +99,7 @@ export default function WithdrawalsPage() {
         ? `${API_URL}/api/withdrawals`
         : `${API_URL}/api/withdrawals?status=${filterStatus}`
       
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
+      const response = await adminApiFetch(url, {}, token)
       const data = await response.json()
       if (!response.ok || !data.success) {
         setWithdrawals([])
@@ -123,9 +120,7 @@ export default function WithdrawalsPage() {
 
   const viewDetails = async (withdrawal: WithdrawalRequest) => {
     try {
-      const response = await fetch(`${API_URL}/api/withdrawals/${withdrawal.id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
+      const response = await adminApiFetch(`${API_URL}/api/withdrawals/${withdrawal.id}`, {}, token)
       const data = await response.json()
       if (data.success) {
         setSelectedWithdrawal(data.data.withdrawal)
@@ -161,14 +156,13 @@ export default function WithdrawalsPage() {
 
     setProcessing(true)
     try {
-      const response = await fetch(`${API_URL}/api/withdrawals/${selectedWithdrawal.id}/approve`, {
+      const response = await adminApiFetch(`${API_URL}/api/withdrawals/${selectedWithdrawal.id}/approve`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ notes })
-      })
+      }, token)
       
       const data = await response.json()
       if (data.success) {
@@ -196,14 +190,13 @@ export default function WithdrawalsPage() {
 
     setProcessing(true)
     try {
-      const response = await fetch(`${API_URL}/api/withdrawals/${selectedWithdrawal.id}/reject`, {
+      const response = await adminApiFetch(`${API_URL}/api/withdrawals/${selectedWithdrawal.id}/reject`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ notes })
-      })
+      }, token)
       
       const data = await response.json()
       if (data.success) {
@@ -226,14 +219,13 @@ export default function WithdrawalsPage() {
 
     setProcessing(true)
     try {
-      const response = await fetch(`${API_URL}/api/withdrawals/${selectedWithdrawal.id}/complete`, {
+      const response = await adminApiFetch(`${API_URL}/api/withdrawals/${selectedWithdrawal.id}/complete`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ notes: 'Payment completed' })
-      })
+      }, token)
       
       const data = await response.json()
       if (data.success) {

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/auth-context'
 import { getApiUrl } from '@/lib/api-config'
+import { adminApiFetch } from '@/lib/admin-session'
 import { 
   Star, 
   Users, 
@@ -66,12 +67,11 @@ export default function RatingSettingsPage() {
         throw new Error('No authentication token available. Please login again.')
       }
       
-      const response = await fetch(apiUrl, {
+      const response = await adminApiFetch(apiUrl, {
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
-      })
+      }, token)
       
       if (response.ok) {
         const result = await response.json()
@@ -106,16 +106,15 @@ export default function RatingSettingsPage() {
 
     setSaving(true)
     try {
-      const response = await fetch(`${API_URL}/api/rating-settings/${key}`, {
+      const response = await adminApiFetch(`${API_URL}/api/rating-settings/${key}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           settingValue: editedSettings[key]
         })
-      })
+      }, token)
 
       if (response.ok) {
         await fetchSettings()
@@ -140,12 +139,9 @@ export default function RatingSettingsPage() {
 
     setRecalculating(true)
     try {
-      const response = await fetch(`${API_URL}/api/recalculate-ratings`, {
+      const response = await adminApiFetch(`${API_URL}/api/recalculate-ratings`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
+      }, token)
 
       if (response.ok) {
         const result = await response.json()

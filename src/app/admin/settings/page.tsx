@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { getApiUrl } from '@/lib/api-config';
 import { settingsAPI } from '@/lib/api';
+import { adminApiFetch } from '@/lib/admin-session';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -91,9 +92,7 @@ function AdsSettingsTab({ token }: { token: string | null }) {
   const fetchAds = async () => {
     try {
       setAdsError(null);
-      const headers: Record<string, string> = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      const response = await fetch(`${API_URL}/api/ads`, { headers });
+      const response = await adminApiFetch(`${API_URL}/api/ads`, {}, token);
       if (!response.ok) {
         const text = await response.text();
         let msg = `HTTP ${response.status}`;
@@ -113,9 +112,7 @@ function AdsSettingsTab({ token }: { token: string | null }) {
 
   const fetchStats = async () => {
     try {
-      const headers: Record<string, string> = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      const response = await fetch(`${API_URL}/api/ads/stats/summary`, { headers });
+      const response = await adminApiFetch(`${API_URL}/api/ads/stats/summary`, {}, token);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const result = await response.json();
       if (result.success && result.data) {
@@ -130,10 +127,9 @@ function AdsSettingsTab({ token }: { token: string | null }) {
 
   const toggleAd = async (id: string) => {
     try {
-      const response = await fetch(`${API_URL}/api/ads/${id}/toggle`, { 
+      const response = await adminApiFetch(`${API_URL}/api/ads/${id}/toggle`, {
         method: 'PATCH',
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-      });
+      }, token);
       if (response.ok) {
         fetchAds();
         fetchStats();
@@ -284,11 +280,7 @@ function SubscribersTab() {
   const fetchStats = async () => {
     if (!token) return
     try {
-      const response = await fetch(`${API_URL}/api/notifications/subscribers/stats`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await adminApiFetch(`${API_URL}/api/notifications/subscribers/stats`, {}, token);
       const data = await response.json();
       if (data.success) {
         setStats(data.data);
@@ -302,11 +294,7 @@ function SubscribersTab() {
     if (!token) return
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/api/notifications/subscribers?status=active&page=${page}&limit=10`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await adminApiFetch(`${API_URL}/api/notifications/subscribers?status=active&page=${page}&limit=10`, {}, token);
       const data = await response.json();
       if (data.success && data.data && Array.isArray(data.data.subscribers)) {
         setSubscribers(data.data.subscribers);
@@ -500,11 +488,7 @@ function UnsubscribersTab() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/notifications/subscribers/stats`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await adminApiFetch(`${API_URL}/api/notifications/subscribers/stats`, {}, token);
       const data = await response.json();
       if (data.success) {
         setStats(data.data);
@@ -517,11 +501,7 @@ function UnsubscribersTab() {
   const fetchUnsubscribers = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/api/notifications/subscribers?status=unsubscribed&page=${page}&limit=10`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await adminApiFetch(`${API_URL}/api/notifications/subscribers?status=unsubscribed&page=${page}&limit=10`, {}, token);
       const data = await response.json();
       if (data.success && data.data && Array.isArray(data.data.subscribers)) {
         setUnsubscribers(data.data.subscribers);
@@ -831,9 +811,7 @@ export default function SystemSettingsPage() {
 
   const fetchProhibitedWords = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/prohibited-words`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const res = await adminApiFetch(`${API_URL}/api/prohibited-words`, {}, token);
       if (res.ok) {
         const data = await res.json();
         setWords(data.words);
@@ -870,14 +848,13 @@ export default function SystemSettingsPage() {
         .filter(([key]) => key.startsWith(prefix))
         .map(([key, value]) => ({ key, value }));
 
-      const response = await fetch(`${API_URL}/api/layout-settings/bulk`, {
+      const response = await adminApiFetch(`${API_URL}/api/layout-settings/bulk`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ settings: settingsToSave })
-      });
+      }, token);
 
       if (response.ok) {
         setLayoutSuccess(`${category === 'homepage' ? 'Homepage' : 'Article'} layout settings saved successfully!`);
@@ -967,14 +944,13 @@ export default function SystemSettingsPage() {
 
     setWordError('');
     try {
-      const res = await fetch(`${API_URL}/api/prohibited-words`, {
+      const res = await adminApiFetch(`${API_URL}/api/prohibited-words`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ word: newWord.trim() })
-      });
+      }, token);
 
       const data = await res.json();
 
@@ -994,14 +970,13 @@ export default function SystemSettingsPage() {
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      const res = await fetch(`${API_URL}/api/prohibited-words/${id}`, {
+      const res = await adminApiFetch(`${API_URL}/api/prohibited-words/${id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ isActive: !currentStatus })
-      });
+      }, token);
 
       if (res.ok) {
         setWordSuccess(`Word ${!currentStatus ? 'activated' : 'deactivated'}!`);
@@ -1017,10 +992,9 @@ export default function SystemSettingsPage() {
     if (!confirm('Are you sure you want to delete this word?')) return;
 
     try {
-      const res = await fetch(`${API_URL}/api/prohibited-words/${id}`, {
+      const res = await adminApiFetch(`${API_URL}/api/prohibited-words/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      }, token);
 
       if (res.ok) {
         setWordSuccess('Word deleted successfully!');
@@ -1057,13 +1031,10 @@ export default function SystemSettingsPage() {
       const formData = new FormData();
       formData.append('logo', file);
 
-      const response = await fetch(`${API_URL}/api/upload/logo`, {
+      const response = await adminApiFetch(`${API_URL}/api/upload/logo`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
         body: formData
-      });
+      }, token);
 
       const data = await response.json();
 
@@ -1114,13 +1085,10 @@ export default function SystemSettingsPage() {
       const formData = new FormData();
       formData.append('mobileLogo', file);
 
-      const response = await fetch(`${API_URL}/api/upload/mobile-logo`, {
+      const response = await adminApiFetch(`${API_URL}/api/upload/mobile-logo`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
         body: formData
-      });
+      }, token);
 
       const data = await response.json();
 
@@ -1171,13 +1139,10 @@ export default function SystemSettingsPage() {
       const formData = new FormData();
       formData.append('favicon', file);
 
-      const response = await fetch(`${API_URL}/api/upload/favicon`, {
+      const response = await adminApiFetch(`${API_URL}/api/upload/favicon`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
         body: formData
-      });
+      }, token);
 
       const data = await response.json();
 

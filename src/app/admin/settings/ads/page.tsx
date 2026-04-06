@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { getApiUrl } from '@/lib/api-config';
+import { adminApiFetch } from '@/lib/admin-session';
 import { Search, Plus, Power, PowerOff, Save, Eye, Code2, BarChart3, Trash2, ArrowLeft } from 'lucide-react';
 
 const API_URL = getApiUrl();
@@ -74,20 +75,17 @@ export default function AdsSettingsPage() {
     }
   }, [token]);
 
-  const getHeaders = () => {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    return headers;
-  };
-
   const loadData = async () => {
     try {
       setError(null);
       setLoading(true);
-      const headers = getHeaders();
       const [adsRes, statsRes] = await Promise.all([
-        fetch(`${API_URL}/api/ads`, { headers }),
-        fetch(`${API_URL}/api/ads/stats/summary`, { headers })
+        adminApiFetch(`${API_URL}/api/ads`, {
+          headers: { 'Content-Type': 'application/json' }
+        }, token),
+        adminApiFetch(`${API_URL}/api/ads/stats/summary`, {
+          headers: { 'Content-Type': 'application/json' }
+        }, token)
       ]);
       if (adsRes.ok) {
         const adsData = await adsRes.json();
@@ -122,10 +120,10 @@ export default function AdsSettingsPage() {
 
   const toggleAdStatus = async (ad: AdPlacement) => {
     try {
-      const response = await fetch(`${API_URL}/api/ads/${ad.id}/toggle`, {
+      const response = await adminApiFetch(`${API_URL}/api/ads/${ad.id}/toggle`, {
         method: 'PATCH',
-        headers: getHeaders(),
-      });
+        headers: { 'Content-Type': 'application/json' },
+      }, token);
       if (response.ok) {
         loadData();
       } else {
@@ -141,9 +139,9 @@ export default function AdsSettingsPage() {
   const saveAd = async () => {
     if (!editingAd) return;
     try {
-      const response = await fetch(`${API_URL}/api/ads/${editingAd.id}`, {
+      const response = await adminApiFetch(`${API_URL}/api/ads/${editingAd.id}`, {
         method: 'PUT',
-        headers: getHeaders(),
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           is_active: editingAd.is_active,
           ad_code: editingAd.ad_code,
@@ -155,7 +153,7 @@ export default function AdsSettingsPage() {
           custom_position: editingAd.custom_position,
           show_on_pages: editingAd.show_on_pages || 'all',
         }),
-      });
+      }, token);
       if (response.ok) {
         setEditingAd(null);
         loadData();
@@ -177,11 +175,11 @@ export default function AdsSettingsPage() {
     }
     setCreating(true);
     try {
-      const response = await fetch(`${API_URL}/api/ads`, {
+      const response = await adminApiFetch(`${API_URL}/api/ads`, {
         method: 'POST',
-        headers: getHeaders(),
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newAd),
-      });
+      }, token);
       const result = await response.json();
       if (response.ok && result.success) {
         setShowCreateModal(false);
@@ -211,10 +209,10 @@ export default function AdsSettingsPage() {
   const deleteAd = async (id: string) => {
     if (!confirm('Are you sure you want to delete this ad placement?')) return;
     try {
-      const response = await fetch(`${API_URL}/api/ads/${id}`, {
+      const response = await adminApiFetch(`${API_URL}/api/ads/${id}`, {
         method: 'DELETE',
-        headers: getHeaders(),
-      });
+        headers: { 'Content-Type': 'application/json' },
+      }, token);
       if (response.ok) {
         loadData();
         alert('Ad placement deleted!');
@@ -232,10 +230,10 @@ export default function AdsSettingsPage() {
     if (!confirm('Are you sure you want to DELETE ALL ad placements? This cannot be undone.')) return;
     if (!confirm('This will permanently remove all ad data. Continue?')) return;
     try {
-      const response = await fetch(`${API_URL}/api/ads/clear-all`, {
+      const response = await adminApiFetch(`${API_URL}/api/ads/clear-all`, {
         method: 'DELETE',
-        headers: getHeaders(),
-      });
+        headers: { 'Content-Type': 'application/json' },
+      }, token);
       const result = await response.json();
       if (response.ok) {
         loadData();
