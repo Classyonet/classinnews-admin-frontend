@@ -32,7 +32,8 @@ import {
   TrendingDown,
   Eye,
   FileText,
-  Layout
+  Layout,
+  Smartphone,
 } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 
@@ -243,19 +244,28 @@ function AdsSettingsTab({ token }: { token: string | null }) {
         </div>
 
         {/* Link to Full Management */}
-        <div className="text-center pt-4 border-t border-slate-100">
-          <a
-            href="/admin/settings/ads"
-            className="inline-flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl"
-          >
-            <DollarSign className="w-5 h-5" />
-            Open Full Ad Management Dashboard
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </a>
-          <p className="text-xs text-slate-500 mt-3">
-            Edit ad code, create new placements, preview ads, and more
+        <div className="text-center pt-4 border-t border-slate-100 space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+            <a
+              href="/admin/settings/ads"
+              className="inline-flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl"
+            >
+              <DollarSign className="w-5 h-5" />
+              Web ad placements
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </a>
+            <a
+              href="/admin/settings/mobile-ads"
+              className="inline-flex items-center gap-3 bg-gradient-to-r from-slate-700 to-slate-900 text-white px-6 py-3 rounded-xl font-bold hover:from-slate-800 hover:to-black transition-all shadow-lg hover:shadow-xl"
+            >
+              <Smartphone className="w-5 h-5" />
+              Mobile AdMob
+            </a>
+          </div>
+          <p className="text-xs text-slate-500">
+            Edit ad code and web placements, or configure AdMob unit IDs for the Classynews app
           </p>
         </div>
       </div>
@@ -1261,6 +1271,12 @@ export default function SystemSettingsPage() {
               className="px-4 py-3 font-semibold text-sm transition-all duration-300 border-b-4 border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             >
               Rating Settings
+            </button>
+            <button
+              onClick={() => window.location.href = '/admin/settings/media-channels'}
+              className="px-4 py-3 font-semibold text-sm transition-all duration-300 border-b-4 border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
+            >
+              TV & Radio (app)
             </button>
             <button
               onClick={() => window.location.href = '/admin/settings/commission'}
