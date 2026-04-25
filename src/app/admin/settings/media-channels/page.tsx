@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { type ChangeEvent, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { getApiUrl } from '@/lib/api-config';
 import { adminApiFetch } from '@/lib/admin-session';
@@ -27,6 +27,8 @@ export default function MediaChannelsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [uploadingCreateLogo, setUploadingCreateLogo] = useState(false);
+  const [createLogoNotice, setCreateLogoNotice] = useState<string | null>(null);
   const [form, setForm] = useState({
     channel_type: 'tv' as 'tv' | 'radio',
     name: '',
@@ -58,6 +60,43 @@ export default function MediaChannelsPage() {
   useEffect(() => {
     load();
   }, [token, filter]);
+
+  const uploadChannelLogo = async (file: File) => {
+    const body = new FormData();
+    body.append('logo', file);
+
+    const res = await adminApiFetch(
+      `${API_URL}/api/upload/media-channel-logo`,
+      {
+        method: 'POST',
+        body,
+      },
+      token
+    );
+    const j = await res.json();
+    if (!res.ok || !j.success || !j?.data?.url) {
+      throw new Error(j.message || j.error || 'Logo upload failed');
+    }
+    return String(j.data.url);
+  };
+
+  const handleCreateLogoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setUploadingCreateLogo(true);
+    setCreateLogoNotice(null);
+    try {
+      const uploadedUrl = await uploadChannelLogo(file);
+      setForm((current) => ({ ...current, logo_url: uploadedUrl }));
+      setCreateLogoNotice('Logo uploaded and attached to this new channel.');
+    } catch (e) {
+      setCreateLogoNotice(e instanceof Error ? e.message : 'Failed to upload logo');
+    } finally {
+      setUploadingCreateLogo(false);
+    }
+  };
 
   const toggle = async (id: string) => {
     const res = await adminApiFetch(`${API_URL}/api/media-channels/${id}/toggle`, { method: 'PATCH' }, token);
@@ -198,6 +237,44 @@ export default function MediaChannelsPage() {
               value={form.logo_url}
               onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
             />
+            <div className="md:col-span-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={uploadingCreateLogo}
+                    onChange={handleCreateLogoUpload}
+                  />
+                  {uploadingCreateLogo ? 'Uploading logo...' : 'Upload / change logo'}
+                </label>
+                {form.logo_url && (
+                  <a
+                    href={form.logo_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm font-medium text-blue-700 hover:text-blue-900"
+                  >
+                    Preview current logo
+                  </a>
+                )}
+              </div>
+              <p className="mt-2 text-xs text-slate-500">
+                You can paste a logo URL above or upload an image directly here.
+              </p>
+              {createLogoNotice && (
+                <p
+                  className={`mt-2 text-sm ${
+                    createLogoNotice.toLowerCase().includes('failed')
+                      ? 'text-red-600'
+                      : 'text-green-700'
+                  }`}
+                >
+                  {createLogoNotice}
+                </p>
+              )}
+            </div>
             <textarea
               className="border rounded-lg px-3 py-2 text-sm md:col-span-2 min-h-[72px]"
               placeholder="Description (optional)"
@@ -235,10 +312,13 @@ export default function MediaChannelsPage() {
                 <ChannelEditor
                   key={row.id}
                   row={row}
-                  onChange={(r) => setRows(rows.map((x) => (x.id === r.id ? r : x)))}
+                  onChange={(r) =>
+                    setRows((current) => current.map((x) => (x.id === r.id ? r : x)))
+                  }
                   onSave={() => saveRow(row)}
                   onToggle={() => toggle(row.id)}
                   onDelete={() => remove(row.id)}
+                  onUploadLogo={uploadChannelLogo}
                 />
               ))}
             </div>
@@ -255,14 +335,37 @@ function ChannelEditor({
   onSave,
   onToggle,
   onDelete,
+  onUploadLogo,
 }: {
   row: ChannelRow;
   onChange: (r: ChannelRow) => void;
   onSave: () => void;
   onToggle: () => void;
   onDelete: () => void;
+  onUploadLogo: (file: File) => Promise<string>;
 }) {
   const Icon = row.channel_type === 'radio' ? Radio : Tv;
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadNotice, setUploadNotice] = useState<string | null>(null);
+
+  const handleRowLogoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setUploadingLogo(true);
+    setUploadNotice(null);
+    try {
+      const uploadedUrl = await onUploadLogo(file);
+      onChange({ ...row, logo_url: uploadedUrl });
+      setUploadNotice('Logo uploaded. Click Save to publish this change.');
+    } catch (e) {
+      setUploadNotice(e instanceof Error ? e.message : 'Failed to upload logo');
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
   return (
     <div className="p-4 space-y-3">
       <div className="flex flex-wrap items-center gap-2 justify-between">
@@ -303,6 +406,44 @@ function ChannelEditor({
         value={row.logo_url || ''}
         onChange={(e) => onChange({ ...row, logo_url: e.target.value || null })}
       />
+      <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              disabled={uploadingLogo}
+              onChange={handleRowLogoUpload}
+            />
+            {uploadingLogo ? 'Uploading logo...' : 'Upload / change logo'}
+          </label>
+          {row.logo_url && (
+            <a
+              href={row.logo_url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm font-medium text-blue-700 hover:text-blue-900"
+            >
+              Preview current logo
+            </a>
+          )}
+        </div>
+        <p className="mt-2 text-xs text-slate-500">
+          Upload a logo file or keep using a direct image URL.
+        </p>
+        {uploadNotice && (
+          <p
+            className={`mt-2 text-sm ${
+              uploadNotice.toLowerCase().includes('failed')
+                ? 'text-red-600'
+                : 'text-green-700'
+            }`}
+          >
+            {uploadNotice}
+          </p>
+        )}
+      </div>
       <textarea
         className="w-full border rounded-lg px-3 py-2 text-sm min-h-[60px]"
         placeholder="Description"
