@@ -4,7 +4,7 @@ import { type ChangeEvent, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { getApiUrl } from '@/lib/api-config';
 import { adminApiFetch } from '@/lib/admin-session';
-import { ArrowLeft, Plus, Power, Radio, Trash2, Tv } from 'lucide-react';
+import { ArrowLeft, Plus, Power, Radio, Trash2, Tv, Youtube, GripVertical } from 'lucide-react';
 import Link from 'next/link';
 
 const API_URL = getApiUrl();
@@ -30,7 +30,7 @@ export default function MediaChannelsPage() {
   const [uploadingCreateLogo, setUploadingCreateLogo] = useState(false);
   const [createLogoNotice, setCreateLogoNotice] = useState<string | null>(null);
   const [form, setForm] = useState({
-    channel_type: 'tv' as 'tv' | 'radio',
+    channel_type: 'tv' as 'tv' | 'radio' | 'youtube',
     name: '',
     stream_url: '',
     logo_url: '',
@@ -38,6 +38,7 @@ export default function MediaChannelsPage() {
     sort_order: 0,
     is_active: true,
   });
+  const [draggedId, setDraggedId] = useState<string | null>(null);
 
   const load = async () => {
     if (!token) return;
@@ -165,6 +166,30 @@ export default function MediaChannelsPage() {
     }
   };
 
+  const handleDragStart = (id: string) => setDraggedId(id);
+  const handleDragOver = (e: React.DragEvent) => e.preventDefault();
+  const handleDrop = async (targetId: string) => {
+    if (!draggedId || draggedId === targetId) return;
+    const oldIdx = rows.findIndex(r => r.id === draggedId);
+    const newIdx = rows.findIndex(r => r.id === targetId);
+    if (oldIdx === -1 || newIdx === -1) return;
+    
+    const newRows = [...rows];
+    const [moved] = newRows.splice(oldIdx, 1);
+    newRows.splice(newIdx, 0, moved);
+    
+    const updatedRows = newRows.map((r, idx) => ({ ...r, sort_order: idx }));
+    setRows(updatedRows);
+    
+    await adminApiFetch(`${API_URL}/api/media-channels/batch-sort`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        updates: updatedRows.map(r => ({ id: r.id, sort_order: r.sort_order }))
+      })
+    }, token);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -173,15 +198,15 @@ export default function MediaChannelsPage() {
             <ArrowLeft className="w-6 h-6" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">TV & Radio (app)</h1>
+            <h1 className="text-2xl font-bold text-slate-900">TV, Radio & YouTube</h1>
             <p className="text-sm text-slate-600 mt-1">
-              Links appear in the Classynews mobile app. Streams open in the device browser.
+              Links appear in the Classynews mobile app. Streams open in the device browser or app. Drag handle to reorder.
             </p>
           </div>
         </div>
 
         <div className="flex gap-2">
-          {(['all', 'tv', 'radio'] as const).map((f) => (
+          {(['all', 'tv', 'radio', 'youtube'] as const).map((f) => (
             <button
               key={f}
               type="button"
@@ -207,10 +232,11 @@ export default function MediaChannelsPage() {
             <select
               className="border rounded-lg px-3 py-2 text-sm"
               value={form.channel_type}
-              onChange={(e) => setForm({ ...form, channel_type: e.target.value as 'tv' | 'radio' })}
+              onChange={(e) => setForm({ ...form, channel_type: e.target.value as 'tv' | 'radio' | 'youtube' })}
             >
               <option value="tv">TV</option>
               <option value="radio">Radio</option>
+              <option value="youtube">YouTube</option>
             </select>
             <input
               type="number"
@@ -309,17 +335,25 @@ export default function MediaChannelsPage() {
           ) : (
             <div className="divide-y divide-slate-100">
               {rows.map((row) => (
-                <ChannelEditor
+                <div 
                   key={row.id}
-                  row={row}
-                  onChange={(r) =>
-                    setRows((current) => current.map((x) => (x.id === r.id ? r : x)))
-                  }
-                  onSave={() => saveRow(row)}
-                  onToggle={() => toggle(row.id)}
-                  onDelete={() => remove(row.id)}
-                  onUploadLogo={uploadChannelLogo}
-                />
+                  draggable
+                  onDragStart={() => handleDragStart(row.id)}
+                  onDragOver={handleDragOver}
+                  onDrop={() => handleDrop(row.id)}
+                  className="bg-white border-b last:border-b-0 hover:bg-slate-50 transition-colors"
+                >
+                  <ChannelEditor
+                    row={row}
+                    onChange={(r) =>
+                      setRows((current) => current.map((x) => (x.id === r.id ? r : x)))
+                    }
+                    onSave={() => saveRow(row)}
+                    onToggle={() => toggle(row.id)}
+                    onDelete={() => remove(row.id)}
+                    onUploadLogo={uploadChannelLogo}
+                  />
+                </div>
               ))}
             </div>
           )}
@@ -344,7 +378,7 @@ function ChannelEditor({
   onDelete: () => void;
   onUploadLogo: (file: File) => Promise<string>;
 }) {
-  const Icon = row.channel_type === 'radio' ? Radio : Tv;
+  const Icon = row.channel_type === 'radio' ? Radio : row.channel_type === 'youtube' ? Youtube : Tv;
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadNotice, setUploadNotice] = useState<string | null>(null);
 
@@ -369,10 +403,15 @@ function ChannelEditor({
   return (
     <div className="p-4 space-y-3">
       <div className="flex flex-wrap items-center gap-2 justify-between">
-        <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-800">
-          <Icon className="w-4 h-4" />
-          {row.channel_type.toUpperCase()}
-        </span>
+        <div className="flex items-center gap-3">
+          <div className="cursor-grab active:cursor-grabbing p-1 hover:bg-slate-200 rounded text-slate-400">
+            <GripVertical className="w-5 h-5" />
+          </div>
+          <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-800">
+            <Icon className="w-4 h-4" />
+            {row.channel_type.toUpperCase()}
+          </span>
+        </div>
         <div className="flex gap-2">
           <button
             type="button"
@@ -458,6 +497,7 @@ function ChannelEditor({
         >
           <option value="tv">tv</option>
           <option value="radio">radio</option>
+          <option value="youtube">youtube</option>
         </select>
         <input
           type="number"
