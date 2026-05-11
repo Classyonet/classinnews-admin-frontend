@@ -20,17 +20,20 @@ interface ChannelRow {
   is_active: boolean;
 }
 
+type ChannelType = 'tv' | 'radio' | 'youtube';
+type ChannelFilter = 'all' | ChannelType;
+
 export default function MediaChannelsPage() {
   const { token } = useAuth();
   const [rows, setRows] = useState<ChannelRow[]>([]);
-  const [filter, setFilter] = useState<'all' | 'tv' | 'radio'>('all');
+  const [filter, setFilter] = useState<ChannelFilter>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [uploadingCreateLogo, setUploadingCreateLogo] = useState(false);
   const [createLogoNotice, setCreateLogoNotice] = useState<string | null>(null);
   const [form, setForm] = useState({
-    channel_type: 'tv' as 'tv' | 'radio' | 'youtube',
+    channel_type: 'tv' as ChannelType,
     name: '',
     stream_url: '',
     logo_url: '',
@@ -200,7 +203,7 @@ export default function MediaChannelsPage() {
           <div>
             <h1 className="text-2xl font-bold text-slate-900">TV, Radio & YouTube</h1>
             <p className="text-sm text-slate-600 mt-1">
-              Links appear in the Classynews mobile app. Streams open in the device browser or app. Drag handle to reorder.
+              Create TV, radio, and YouTube channels for the Classynews mobile app. Drag handle to reorder.
             </p>
           </div>
         </div>
@@ -232,7 +235,7 @@ export default function MediaChannelsPage() {
             <select
               className="border rounded-lg px-3 py-2 text-sm"
               value={form.channel_type}
-              onChange={(e) => setForm({ ...form, channel_type: e.target.value as 'tv' | 'radio' | 'youtube' })}
+              onChange={(e) => setForm({ ...form, channel_type: e.target.value as ChannelType })}
             >
               <option value="tv">TV</option>
               <option value="radio">Radio</option>

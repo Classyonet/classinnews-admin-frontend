@@ -1276,7 +1276,7 @@ export default function SystemSettingsPage() {
               onClick={() => window.location.href = '/admin/settings/media-channels'}
               className="px-4 py-3 font-semibold text-sm transition-all duration-300 border-b-4 border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             >
-              TV & Radio (app)
+              TV, Radio & YouTube
             </button>
             <button
               onClick={() => window.location.href = '/admin/settings/commission'}
