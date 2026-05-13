@@ -17,6 +17,7 @@ import {
   BookOpen,
   TrendingUp,
   DollarSign,
+  Image,
 } from 'lucide-react';
 
 const navigation = [
@@ -30,6 +31,7 @@ const navigation = [
   { name: 'Trending Topics', href: '/admin/trending-topics', icon: TrendingUp, notificationKey: 'trending' },
   { name: 'Analytics', href: '/admin/analytics', icon: BarChart3, notificationKey: 'analytics' },
   { name: 'Categories', href: '/admin/categories', icon: FolderTree, notificationKey: 'categories' },
+  { name: 'Media Library', href: '/admin/media-library', icon: Image, notificationKey: 'media-library' },
   { name: 'System Settings', href: '/admin/settings', icon: Settings, notificationKey: 'settings' },
 ];
 

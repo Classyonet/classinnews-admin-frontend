@@ -4,7 +4,7 @@ import { type ChangeEvent, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { getApiUrl } from '@/lib/api-config';
 import { adminApiFetch } from '@/lib/admin-session';
-import { ArrowLeft, Plus, Power, Radio, Trash2, Tv, Youtube, GripVertical } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, Plus, Power, Radio, Trash2, Tv, Youtube, GripVertical, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 const API_URL = getApiUrl();
@@ -22,6 +22,13 @@ interface ChannelRow {
 
 type ChannelType = 'tv' | 'radio' | 'youtube';
 type ChannelFilter = 'all' | ChannelType;
+type MediaItem = {
+  id: string;
+  url: string;
+  file_type: string;
+  alt_text: string | null;
+  caption: string | null;
+};
 
 export default function MediaChannelsPage() {
   const { token } = useAuth();
@@ -32,6 +39,10 @@ export default function MediaChannelsPage() {
   const [creating, setCreating] = useState(false);
   const [uploadingCreateLogo, setUploadingCreateLogo] = useState(false);
   const [createLogoNotice, setCreateLogoNotice] = useState<string | null>(null);
+  const [mediaLibraryOpen, setMediaLibraryOpen] = useState(false);
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [mediaTarget, setMediaTarget] = useState<'create' | string>('create');
   const [form, setForm] = useState({
     channel_type: 'tv' as ChannelType,
     name: '',
@@ -82,6 +93,34 @@ export default function MediaChannelsPage() {
       throw new Error(j.message || j.error || 'Logo upload failed');
     }
     return String(j.data.url);
+  };
+
+  const openMediaLibrary = async (target: 'create' | string) => {
+    setMediaTarget(target);
+    setMediaLibraryOpen(true);
+    setMediaLoading(true);
+    try {
+      const res = await adminApiFetch(`${API_URL}/api/media-library`, {}, token);
+      const j = await res.json();
+      if (!res.ok || !j.success) throw new Error(j.message || j.error || 'Failed to load media');
+      setMediaItems(Array.isArray(j.data) ? j.data : []);
+    } catch {
+      setMediaItems([]);
+    } finally {
+      setMediaLoading(false);
+    }
+  };
+
+  const selectMediaUrl = (url: string) => {
+    if (mediaTarget === 'create') {
+      setForm((current) => ({ ...current, logo_url: url }));
+      setCreateLogoNotice('Media library image attached to this new channel.');
+    } else {
+      setRows((current) =>
+        current.map((row) => row.id === mediaTarget ? { ...row, logo_url: url } : row)
+      );
+    }
+    setMediaLibraryOpen(false);
   };
 
   const handleCreateLogoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -193,29 +232,55 @@ export default function MediaChannelsPage() {
     }, token);
   };
 
+  const channelStats = [
+    { label: 'TV', icon: Tv, value: rows.filter((row) => row.channel_type === 'tv').length, color: 'text-red-200' },
+    { label: 'Radio', icon: Radio, value: rows.filter((row) => row.channel_type === 'radio').length, color: 'text-blue-200' },
+    { label: 'YouTube', icon: Youtube, value: rows.filter((row) => row.channel_type === 'youtube').length, color: 'text-rose-200' },
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <Link href="/admin/settings" className="text-slate-600 hover:text-slate-900">
-            <ArrowLeft className="w-6 h-6" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">TV, Radio & YouTube</h1>
-            <p className="text-sm text-slate-600 mt-1">
-              Create TV, radio, and YouTube channels for the Classynews mobile app. Drag handle to reorder.
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 p-6">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <div className="overflow-hidden rounded-2xl border border-white/70 bg-white/85 shadow-xl shadow-slate-200/60 backdrop-blur">
+          <div className="flex flex-wrap items-center justify-between gap-5 bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 px-6 py-6 text-white">
+            <div className="flex items-center gap-4">
+              <Link href="/admin/settings" className="rounded-xl border border-white/15 bg-white/10 p-2 text-white/80 transition hover:bg-white/20 hover:text-white">
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-blue-100">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Mobile app media hub
+                </div>
+                <h1 className="mt-3 text-3xl font-black tracking-tight">TV, Radio & YouTube</h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+                  Create, arrange, brand, and publish the media channels that appear inside the Classynews app.
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {channelStats.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.label} className="min-w-24 rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-center">
+                    <Icon className={`mx-auto mb-1 h-4 w-4 ${item.color}`} />
+                    <div className="text-2xl font-black">{item.value}</div>
+                    <div className="text-xs font-semibold text-slate-300">{item.label}</div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
           {(['all', 'tv', 'radio', 'youtube'] as const).map((f) => (
             <button
               key={f}
               type="button"
               onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
-                filter === f ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200'
+              className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
+                filter === f ? 'bg-slate-900 text-white shadow-lg shadow-slate-300' : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
               {f === 'all' ? 'All' : f.toUpperCase()}
@@ -227,13 +292,17 @@ export default function MediaChannelsPage() {
           <div className="bg-red-50 text-red-800 px-4 py-3 rounded-lg text-sm">{error}</div>
         )}
 
-        <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
-          <h2 className="font-semibold text-slate-800 flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Add channel
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50">
+          <div className="mb-5">
+            <h2 className="flex items-center gap-2 text-lg font-black text-slate-900">
+              <span className="rounded-xl bg-blue-50 p-2 text-blue-700"><Plus className="h-4 w-4" /></span>
+              Add channel
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">Paste a stream URL, attach a logo, then publish it to the app.</p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <select
-              className="border rounded-lg px-3 py-2 text-sm"
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold outline-none focus:border-blue-400 focus:bg-white"
               value={form.channel_type}
               onChange={(e) => setForm({ ...form, channel_type: e.target.value as ChannelType })}
             >
@@ -243,32 +312,32 @@ export default function MediaChannelsPage() {
             </select>
             <input
               type="number"
-              className="border rounded-lg px-3 py-2 text-sm"
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none focus:border-blue-400 focus:bg-white"
               placeholder="sort_order"
               value={form.sort_order}
               onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) || 0 })}
             />
             <input
-              className="border rounded-lg px-3 py-2 text-sm md:col-span-2"
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none focus:border-blue-400 focus:bg-white md:col-span-2"
               placeholder="Name"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
             <input
-              className="border rounded-lg px-3 py-2 text-sm md:col-span-2"
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none focus:border-blue-400 focus:bg-white md:col-span-2"
               placeholder="Stream / page URL (https://...)"
               value={form.stream_url}
               onChange={(e) => setForm({ ...form, stream_url: e.target.value })}
             />
             <input
-              className="border rounded-lg px-3 py-2 text-sm md:col-span-2"
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none focus:border-blue-400 focus:bg-white md:col-span-2"
               placeholder="Logo URL (optional)"
               value={form.logo_url}
               onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
             />
-            <div className="md:col-span-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3">
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-gradient-to-br from-slate-50 to-blue-50/40 px-4 py-4 md:col-span-2">
               <div className="flex flex-wrap items-center gap-3">
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-300 transition hover:bg-slate-800">
                   <input
                     type="file"
                     accept="image/*"
@@ -288,6 +357,14 @@ export default function MediaChannelsPage() {
                     Preview current logo
                   </a>
                 )}
+                <button
+                  type="button"
+                  onClick={() => openMediaLibrary('create')}
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                >
+                  <ImageIcon className="h-4 w-4" />
+                  Browse media
+                </button>
               </div>
               <p className="mt-2 text-xs text-slate-500">
                 You can paste a logo URL above or upload an image directly here.
@@ -305,7 +382,7 @@ export default function MediaChannelsPage() {
               )}
             </div>
             <textarea
-              className="border rounded-lg px-3 py-2 text-sm md:col-span-2 min-h-[72px]"
+              className="min-h-[86px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none focus:border-blue-400 focus:bg-white md:col-span-2"
               placeholder="Description (optional)"
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -323,20 +400,26 @@ export default function MediaChannelsPage() {
             type="button"
             onClick={create}
             disabled={creating}
-            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50"
           >
-            Create
+            <Plus className="h-4 w-4" />
+            Create channel
           </button>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100 font-semibold text-slate-800">Channels</div>
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-200/50">
+          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+            <div>
+              <h2 className="font-black text-slate-900">Channels</h2>
+              <p className="text-sm text-slate-500">Drag a card to reorder the app display.</p>
+            </div>
+          </div>
           {loading ? (
-            <div className="p-8 text-center text-slate-500">Loading…</div>
+            <div className="p-10 text-center text-slate-500">Loading...</div>
           ) : rows.length === 0 ? (
-            <div className="p-8 text-center text-slate-500">No channels yet.</div>
+            <div className="p-10 text-center text-slate-500">No channels yet.</div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="grid grid-cols-1 gap-4 p-5 xl:grid-cols-2">
               {rows.map((row) => (
                 <div 
                   key={row.id}
@@ -344,7 +427,7 @@ export default function MediaChannelsPage() {
                   onDragStart={() => handleDragStart(row.id)}
                   onDragOver={handleDragOver}
                   onDrop={() => handleDrop(row.id)}
-                  className="bg-white border-b last:border-b-0 hover:bg-slate-50 transition-colors"
+                  className="transition"
                 >
                   <ChannelEditor
                     row={row}
@@ -355,12 +438,21 @@ export default function MediaChannelsPage() {
                     onToggle={() => toggle(row.id)}
                     onDelete={() => remove(row.id)}
                     onUploadLogo={uploadChannelLogo}
+                    onBrowseLogo={() => openMediaLibrary(row.id)}
                   />
                 </div>
               ))}
             </div>
           )}
         </div>
+        {mediaLibraryOpen && (
+          <MediaLibraryPicker
+            items={mediaItems}
+            loading={mediaLoading}
+            onSelect={selectMediaUrl}
+            onClose={() => setMediaLibraryOpen(false)}
+          />
+        )}
       </div>
     </div>
   );
@@ -373,6 +465,7 @@ function ChannelEditor({
   onToggle,
   onDelete,
   onUploadLogo,
+  onBrowseLogo,
 }: {
   row: ChannelRow;
   onChange: (r: ChannelRow) => void;
@@ -380,6 +473,7 @@ function ChannelEditor({
   onToggle: () => void;
   onDelete: () => void;
   onUploadLogo: (file: File) => Promise<string>;
+  onBrowseLogo: () => void;
 }) {
   const Icon = row.channel_type === 'radio' ? Radio : row.channel_type === 'youtube' ? Youtube : Tv;
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -404,53 +498,56 @@ function ChannelEditor({
   };
 
   return (
-    <div className="p-4 space-y-3">
+    <div className="space-y-4 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
       <div className="flex flex-wrap items-center gap-2 justify-between">
         <div className="flex items-center gap-3">
-          <div className="cursor-grab active:cursor-grabbing p-1 hover:bg-slate-200 rounded text-slate-400">
+          <div className="cursor-grab rounded-xl bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 active:cursor-grabbing">
             <GripVertical className="w-5 h-5" />
           </div>
-          <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-800">
+          <span className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-black text-white">
             <Icon className="w-4 h-4" />
             {row.channel_type.toUpperCase()}
+          </span>
+          <span className={`rounded-full px-3 py-1 text-xs font-bold ${row.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+            {row.is_active ? 'Active' : 'Hidden'}
           </span>
         </div>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={onToggle}
-            className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50"
+            className="rounded-xl border border-slate-200 bg-white p-2 hover:bg-slate-50"
           >
             <Power className={`w-4 h-4 ${row.is_active ? 'text-green-600' : 'text-slate-400'}`} />
           </button>
           <button
             type="button"
             onClick={onDelete}
-            className="p-2 rounded-lg border border-slate-200 hover:bg-red-50 text-red-600"
+            className="rounded-xl border border-slate-200 bg-white p-2 text-red-600 hover:bg-red-50"
           >
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
       <input
-        className="w-full border rounded-lg px-3 py-2 text-sm"
+        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold outline-none focus:border-blue-400"
         value={row.name}
         onChange={(e) => onChange({ ...row, name: e.target.value })}
       />
       <input
-        className="w-full border rounded-lg px-3 py-2 text-sm"
+        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400"
         value={row.stream_url}
         onChange={(e) => onChange({ ...row, stream_url: e.target.value })}
       />
       <input
-        className="w-full border rounded-lg px-3 py-2 text-sm"
+        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400"
         placeholder="Logo URL"
         value={row.logo_url || ''}
         onChange={(e) => onChange({ ...row, logo_url: e.target.value || null })}
       />
-      <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-3">
+      <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-3 py-3">
         <div className="flex flex-wrap items-center gap-3">
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800">
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-bold text-white hover:bg-slate-800">
             <input
               type="file"
               accept="image/*"
@@ -470,6 +567,14 @@ function ChannelEditor({
               Preview current logo
             </a>
           )}
+          <button
+            type="button"
+            onClick={onBrowseLogo}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100"
+          >
+            <ImageIcon className="h-4 w-4" />
+            Browse media
+          </button>
         </div>
         <p className="mt-2 text-xs text-slate-500">
           Upload a logo file or keep using a direct image URL.
@@ -487,14 +592,14 @@ function ChannelEditor({
         )}
       </div>
       <textarea
-        className="w-full border rounded-lg px-3 py-2 text-sm min-h-[60px]"
+        className="min-h-[70px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400"
         placeholder="Description"
         value={row.description || ''}
         onChange={(e) => onChange({ ...row, description: e.target.value || null })}
       />
       <div className="flex flex-wrap gap-2 items-center">
         <select
-          className="border rounded-lg px-2 py-1 text-sm"
+          className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
           value={row.channel_type}
           onChange={(e) => onChange({ ...row, channel_type: e.target.value })}
         >
@@ -504,7 +609,7 @@ function ChannelEditor({
         </select>
         <input
           type="number"
-          className="border rounded-lg px-2 py-1 text-sm w-24"
+          className="w-24 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
           value={row.sort_order}
           onChange={(e) => onChange({ ...row, sort_order: Number(e.target.value) || 0 })}
         />
@@ -519,10 +624,71 @@ function ChannelEditor({
         <button
           type="button"
           onClick={onSave}
-          className="ml-auto text-sm bg-slate-900 text-white px-3 py-1.5 rounded-lg"
+          className="ml-auto rounded-xl bg-slate-900 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-slate-800"
         >
           Save
         </button>
+      </div>
+    </div>
+  );
+}
+
+function MediaLibraryPicker({
+  items,
+  loading,
+  onSelect,
+  onClose,
+}: {
+  items: MediaItem[];
+  loading: boolean;
+  onSelect: (url: string) => void;
+  onClose: () => void;
+}) {
+  const imageItems = items.filter((item) => item.file_type?.startsWith('image/'));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+      <div className="max-h-[82vh] w-full max-w-4xl overflow-hidden rounded-xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div>
+            <h3 className="font-semibold text-slate-900">Browse media</h3>
+            <p className="text-sm text-slate-500">Select an uploaded image to reuse as the channel logo.</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Close
+          </button>
+        </div>
+        <div className="max-h-[64vh] overflow-y-auto p-5">
+          {loading ? (
+            <div className="py-12 text-center text-slate-500">Loading media...</div>
+          ) : imageItems.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-slate-300 py-12 text-center text-slate-500">
+              No uploaded images found.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              {imageItems.map((item) => (
+                <button
+                  type="button"
+                  key={item.id}
+                  onClick={() => onSelect(item.url)}
+                  className="overflow-hidden rounded-lg border border-slate-200 bg-white text-left shadow-sm transition hover:border-blue-400 hover:shadow-md"
+                >
+                  <img src={item.url} alt={item.alt_text || 'Media'} className="h-28 w-full object-cover" />
+                  <div className="p-2">
+                    <p className="truncate text-xs font-semibold text-slate-800">
+                      {item.alt_text || item.caption || 'Uploaded media'}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
