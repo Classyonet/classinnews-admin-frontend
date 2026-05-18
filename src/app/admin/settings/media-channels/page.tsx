@@ -630,7 +630,7 @@ function ChannelEditor({
       </div>
       <input
         className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold outline-none focus:border-blue-400"
-        placeholder={isVideoStream ? 'Optional manual title override' : 'Name'}
+        placeholder={isVideoStream ? 'Video title' : 'Name'}
         value={row.name}
         onChange={(e) => onChange({ ...row, name: e.target.value })}
       />
