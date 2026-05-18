@@ -20,8 +20,16 @@ interface ChannelRow {
   is_active: boolean;
 }
 
-type ChannelType = 'tv' | 'radio' | 'youtube';
+type ChannelType = 'tv' | 'radio' | 'youtube' | 'youtube2' | 'youtube3';
 type ChannelFilter = 'all' | ChannelType;
+const CHANNEL_TYPES: ChannelType[] = ['tv', 'radio', 'youtube', 'youtube2', 'youtube3'];
+const CHANNEL_LABELS: Record<ChannelType, string> = {
+  tv: 'TV',
+  radio: 'Radio',
+  youtube: 'YouTube',
+  youtube2: 'YouTube 2',
+  youtube3: 'YouTube 3',
+};
 type MediaItem = {
   id: string;
   url: string;
@@ -236,6 +244,8 @@ export default function MediaChannelsPage() {
     { label: 'TV', icon: Tv, value: rows.filter((row) => row.channel_type === 'tv').length, color: 'text-red-200' },
     { label: 'Radio', icon: Radio, value: rows.filter((row) => row.channel_type === 'radio').length, color: 'text-blue-200' },
     { label: 'YouTube', icon: Youtube, value: rows.filter((row) => row.channel_type === 'youtube').length, color: 'text-rose-200' },
+    { label: 'YouTube 2', icon: Youtube, value: rows.filter((row) => row.channel_type === 'youtube2').length, color: 'text-rose-200' },
+    { label: 'YouTube 3', icon: Youtube, value: rows.filter((row) => row.channel_type === 'youtube3').length, color: 'text-rose-200' },
   ];
 
   return (
@@ -258,7 +268,7 @@ export default function MediaChannelsPage() {
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
               {channelStats.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -274,7 +284,7 @@ export default function MediaChannelsPage() {
         </div>
 
         <div className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
-          {(['all', 'tv', 'radio', 'youtube'] as const).map((f) => (
+          {(['all', ...CHANNEL_TYPES] as const).map((f) => (
             <button
               key={f}
               type="button"
@@ -283,7 +293,7 @@ export default function MediaChannelsPage() {
                 filter === f ? 'bg-slate-900 text-white shadow-lg shadow-slate-300' : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              {f === 'all' ? 'All' : f.toUpperCase()}
+              {f === 'all' ? 'All' : CHANNEL_LABELS[f]}
             </button>
           ))}
         </div>
@@ -309,6 +319,8 @@ export default function MediaChannelsPage() {
               <option value="tv">TV</option>
               <option value="radio">Radio</option>
               <option value="youtube">YouTube</option>
+              <option value="youtube2">YouTube 2</option>
+              <option value="youtube3">YouTube 3</option>
             </select>
             <input
               type="number"
@@ -475,7 +487,7 @@ function ChannelEditor({
   onUploadLogo: (file: File) => Promise<string>;
   onBrowseLogo: () => void;
 }) {
-  const Icon = row.channel_type === 'radio' ? Radio : row.channel_type === 'youtube' ? Youtube : Tv;
+  const Icon = row.channel_type === 'radio' ? Radio : row.channel_type.startsWith('youtube') ? Youtube : Tv;
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadNotice, setUploadNotice] = useState<string | null>(null);
 
@@ -506,7 +518,7 @@ function ChannelEditor({
           </div>
           <span className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-black text-white">
             <Icon className="w-4 h-4" />
-            {row.channel_type.toUpperCase()}
+            {CHANNEL_LABELS[row.channel_type as ChannelType] ?? row.channel_type.toUpperCase()}
           </span>
           <span className={`rounded-full px-3 py-1 text-xs font-bold ${row.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
             {row.is_active ? 'Active' : 'Hidden'}
@@ -606,6 +618,8 @@ function ChannelEditor({
           <option value="tv">tv</option>
           <option value="radio">radio</option>
           <option value="youtube">youtube</option>
+          <option value="youtube2">youtube2</option>
+          <option value="youtube3">youtube3</option>
         </select>
         <input
           type="number"
