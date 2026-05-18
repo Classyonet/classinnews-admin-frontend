@@ -30,6 +30,13 @@ const CHANNEL_LABELS: Record<ChannelType, string> = {
   youtube2: 'YouTube 2',
   youtube3: 'YouTube 3',
 };
+const DEFAULT_HEADINGS: Record<ChannelType, string> = {
+  tv: 'TV',
+  radio: 'Radio',
+  youtube: 'YOUTUBE LATEST',
+  youtube2: 'YOUTUBE 2',
+  youtube3: 'YOUTUBE 3',
+};
 type MediaItem = {
   id: string;
   url: string;
@@ -60,6 +67,8 @@ export default function MediaChannelsPage() {
     sort_order: 0,
     is_active: true,
   });
+  const [headings, setHeadings] = useState<Record<ChannelType, string>>(DEFAULT_HEADINGS);
+  const [savingHeadings, setSavingHeadings] = useState(false);
   const [draggedId, setDraggedId] = useState<string | null>(null);
 
   const load = async () => {
@@ -72,6 +81,13 @@ export default function MediaChannelsPage() {
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || `HTTP ${res.status}`);
       setRows(Array.isArray(j.data) ? j.data : []);
+      if (filter === 'all') {
+        const headingsRes = await adminApiFetch(`${API_URL}/api/media-channel-headings`, {}, token);
+        const headingsJson = await headingsRes.json();
+        if (headingsRes.ok && headingsJson.success && headingsJson.data) {
+          setHeadings({ ...DEFAULT_HEADINGS, ...headingsJson.data });
+        }
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load');
       setRows([]);
@@ -101,6 +117,26 @@ export default function MediaChannelsPage() {
       throw new Error(j.message || j.error || 'Logo upload failed');
     }
     return String(j.data.url);
+  };
+
+  const saveHeadings = async () => {
+    if (!token) return;
+    setSavingHeadings(true);
+    try {
+      const res = await adminApiFetch(`${API_URL}/api/media-channel-headings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ headings }),
+      }, token);
+      const j = await res.json();
+      if (!res.ok || !j.success) throw new Error(j.error || 'Failed to save headings');
+      setHeadings({ ...DEFAULT_HEADINGS, ...j.data });
+      alert('Media headings saved successfully');
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to save headings');
+    } finally {
+      setSavingHeadings(false);
+    }
   };
 
   const openMediaLibrary = async (target: 'create' | string) => {
@@ -179,8 +215,9 @@ export default function MediaChannelsPage() {
   };
 
   const create = async () => {
-    if (!form.name.trim() || !form.stream_url.trim()) {
-      alert('Name and stream URL are required');
+    const isVideoStream = form.channel_type === 'youtube2' || form.channel_type === 'youtube3';
+    if ((!isVideoStream && !form.name.trim()) || !form.stream_url.trim()) {
+      alert(isVideoStream ? 'YouTube video URL is required' : 'Name and stream URL are required');
       return;
     }
     setCreating(true);
@@ -247,6 +284,7 @@ export default function MediaChannelsPage() {
     { label: 'YouTube 2', icon: Youtube, value: rows.filter((row) => row.channel_type === 'youtube2').length, color: 'text-rose-200' },
     { label: 'YouTube 3', icon: Youtube, value: rows.filter((row) => row.channel_type === 'youtube3').length, color: 'text-rose-200' },
   ];
+  const createIsVideoStream = form.channel_type === 'youtube2' || form.channel_type === 'youtube3';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 p-6">
@@ -304,11 +342,42 @@ export default function MediaChannelsPage() {
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50">
           <div className="mb-5">
+            <h2 className="text-lg font-black text-slate-900">Mobile section headings</h2>
+            <p className="mt-1 text-sm text-slate-500">Change the titles shown above TV, Radio, YouTube, YouTube 2, and YouTube 3 in the app.</p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+            {CHANNEL_TYPES.map((type) => (
+              <label key={type} className="space-y-1">
+                <span className="text-xs font-bold uppercase text-slate-500">{CHANNEL_LABELS[type]}</span>
+                <input
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold outline-none focus:border-blue-400 focus:bg-white"
+                  value={headings[type]}
+                  onChange={(e) => setHeadings((current) => ({ ...current, [type]: e.target.value }))}
+                />
+              </label>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={saveHeadings}
+            disabled={savingHeadings}
+            className="mt-5 rounded-xl bg-slate-900 px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-slate-800 disabled:opacity-50"
+          >
+            {savingHeadings ? 'Saving headings...' : 'Save headings'}
+          </button>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50">
+          <div className="mb-5">
             <h2 className="flex items-center gap-2 text-lg font-black text-slate-900">
               <span className="rounded-xl bg-blue-50 p-2 text-blue-700"><Plus className="h-4 w-4" /></span>
               Add channel
             </h2>
-            <p className="mt-1 text-sm text-slate-500">Paste a stream URL, attach a logo, then publish it to the app.</p>
+            <p className="mt-1 text-sm text-slate-500">
+              {createIsVideoStream
+                ? 'Paste a YouTube video link. The app will use the video title and thumbnail automatically.'
+                : 'Paste a stream URL, attach a logo, then publish it to the app.'}
+            </p>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <select
@@ -331,23 +400,25 @@ export default function MediaChannelsPage() {
             />
             <input
               className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none focus:border-blue-400 focus:bg-white md:col-span-2"
-              placeholder="Name"
+              placeholder={createIsVideoStream ? 'Optional manual title override' : 'Name'}
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
             <input
               className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none focus:border-blue-400 focus:bg-white md:col-span-2"
-              placeholder="Stream / page URL (https://...)"
+              placeholder={createIsVideoStream ? 'YouTube video URL (https://youtube.com/watch?v=...)' : 'Stream / page URL (https://...)'}
               value={form.stream_url}
               onChange={(e) => setForm({ ...form, stream_url: e.target.value })}
             />
-            <input
-              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none focus:border-blue-400 focus:bg-white md:col-span-2"
-              placeholder="Logo URL (optional)"
-              value={form.logo_url}
-              onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
-            />
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-gradient-to-br from-slate-50 to-blue-50/40 px-4 py-4 md:col-span-2">
+            {!createIsVideoStream && (
+              <input
+                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none focus:border-blue-400 focus:bg-white md:col-span-2"
+                placeholder="Logo URL (optional)"
+                value={form.logo_url}
+                onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
+              />
+            )}
+            {!createIsVideoStream && <div className="rounded-2xl border border-dashed border-slate-300 bg-gradient-to-br from-slate-50 to-blue-50/40 px-4 py-4 md:col-span-2">
               <div className="flex flex-wrap items-center gap-3">
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-300 transition hover:bg-slate-800">
                   <input
@@ -392,13 +463,15 @@ export default function MediaChannelsPage() {
                   {createLogoNotice}
                 </p>
               )}
-            </div>
-            <textarea
-              className="min-h-[86px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none focus:border-blue-400 focus:bg-white md:col-span-2"
-              placeholder="Description (optional)"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-            />
+            </div>}
+            {!createIsVideoStream && (
+              <textarea
+                className="min-h-[86px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none focus:border-blue-400 focus:bg-white md:col-span-2"
+                placeholder="Description (optional)"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
+            )}
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -488,6 +561,7 @@ function ChannelEditor({
   onBrowseLogo: () => void;
 }) {
   const Icon = row.channel_type === 'radio' ? Radio : row.channel_type.startsWith('youtube') ? Youtube : Tv;
+  const isVideoStream = row.channel_type === 'youtube2' || row.channel_type === 'youtube3';
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadNotice, setUploadNotice] = useState<string | null>(null);
 
@@ -543,21 +617,30 @@ function ChannelEditor({
       </div>
       <input
         className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold outline-none focus:border-blue-400"
+        placeholder={isVideoStream ? 'Optional manual title override' : 'Name'}
         value={row.name}
         onChange={(e) => onChange({ ...row, name: e.target.value })}
       />
       <input
         className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400"
+        placeholder={isVideoStream ? 'YouTube video URL' : 'Stream / page URL'}
         value={row.stream_url}
         onChange={(e) => onChange({ ...row, stream_url: e.target.value })}
       />
-      <input
-        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400"
-        placeholder="Logo URL"
-        value={row.logo_url || ''}
-        onChange={(e) => onChange({ ...row, logo_url: e.target.value || null })}
-      />
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-3 py-3">
+      {isVideoStream && (
+        <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+          YouTube 2 and YouTube 3 use direct video links. The mobile app pulls the video title and thumbnail automatically.
+        </p>
+      )}
+      {!isVideoStream && (
+        <input
+          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400"
+          placeholder="Logo URL"
+          value={row.logo_url || ''}
+          onChange={(e) => onChange({ ...row, logo_url: e.target.value || null })}
+        />
+      )}
+      {!isVideoStream && <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-3 py-3">
         <div className="flex flex-wrap items-center gap-3">
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-sm font-bold text-white hover:bg-slate-800">
             <input
@@ -602,13 +685,15 @@ function ChannelEditor({
             {uploadNotice}
           </p>
         )}
-      </div>
-      <textarea
-        className="min-h-[70px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400"
-        placeholder="Description"
-        value={row.description || ''}
-        onChange={(e) => onChange({ ...row, description: e.target.value || null })}
-      />
+      </div>}
+      {!isVideoStream && (
+        <textarea
+          className="min-h-[70px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-400"
+          placeholder="Description"
+          value={row.description || ''}
+          onChange={(e) => onChange({ ...row, description: e.target.value || null })}
+        />
+      )}
       <div className="flex flex-wrap gap-2 items-center">
         <select
           className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
