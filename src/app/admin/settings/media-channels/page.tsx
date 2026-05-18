@@ -70,6 +70,7 @@ export default function MediaChannelsPage() {
   const [headings, setHeadings] = useState<Record<ChannelType, string>>(DEFAULT_HEADINGS);
   const [savingHeadings, setSavingHeadings] = useState(false);
   const [draggedId, setDraggedId] = useState<string | null>(null);
+  const activeType = filter === 'all' ? 'tv' : filter;
   const createType = form.channel_type;
   const createIsVideoStream = createType === 'youtube2' || createType === 'youtube3';
 
@@ -115,6 +116,12 @@ export default function MediaChannelsPage() {
   useEffect(() => {
     load();
   }, [token, filter]);
+
+  useEffect(() => {
+    if (filter !== 'all' && form.channel_type !== filter) {
+      startCreateFor(filter);
+    }
+  }, [filter]);
 
   const uploadChannelLogo = async (file: File) => {
     const body = new FormData();
@@ -232,8 +239,8 @@ export default function MediaChannelsPage() {
 
   const create = async () => {
     const isVideoStream = form.channel_type === 'youtube2' || form.channel_type === 'youtube3';
-    if ((!isVideoStream && !form.name.trim()) || !form.stream_url.trim()) {
-      alert(isVideoStream ? 'YouTube video URL is required' : 'Name and stream URL are required');
+    if (!form.name.trim() || !form.stream_url.trim()) {
+      alert(isVideoStream ? 'Video title and YouTube video URL are required' : 'Name and stream URL are required');
       return;
     }
     setCreating(true);
@@ -332,7 +339,10 @@ export default function MediaChannelsPage() {
             <button
               key={f}
               type="button"
-              onClick={() => setFilter(f)}
+              onClick={() => {
+                setFilter(f);
+                if (f !== 'all') startCreateFor(f);
+              }}
               className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
                 filter === f ? 'bg-slate-900 text-white shadow-lg shadow-slate-300' : 'text-slate-600 hover:bg-slate-100'
               }`}
@@ -346,45 +356,22 @@ export default function MediaChannelsPage() {
           <div className="bg-red-50 text-red-800 px-4 py-3 rounded-lg text-sm">{error}</div>
         )}
 
+        {filter !== 'all' && (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50">
           <div className="mb-5">
-            <h2 className="text-lg font-black text-slate-900">Section settings</h2>
-            <p className="mt-1 text-sm text-slate-500">Each mobile media section has its own heading and add button.</p>
+            <h2 className="text-lg font-black text-slate-900">{CHANNEL_LABELS[activeType]} settings</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Change this section heading and manage only its {activeType === 'youtube2' || activeType === 'youtube3' ? 'videos' : 'channels'}.
+            </p>
           </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-            {CHANNEL_TYPES.map((type) => (
-              <div
-                key={type}
-                className={`rounded-2xl border p-4 transition ${
-                  createType === type
-                    ? 'border-blue-300 bg-blue-50/60 shadow-sm'
-                    : 'border-slate-200 bg-slate-50'
-                }`}
-              >
-                <label className="space-y-1">
-                  <span className="text-xs font-bold uppercase text-slate-500">{CHANNEL_LABELS[type]} heading</span>
-                  <input
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-semibold outline-none focus:border-blue-400"
-                    value={headings[type]}
-                    onChange={(e) => setHeadings((current) => ({ ...current, [type]: e.target.value }))}
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => startCreateFor(type)}
-                  className={`mt-3 w-full rounded-xl px-3 py-2 text-sm font-black transition ${
-                    createType === type
-                      ? 'bg-blue-700 text-white hover:bg-blue-800'
-                      : 'bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  {type === 'youtube2' || type === 'youtube3'
-                    ? `Add ${CHANNEL_LABELS[type]} video`
-                    : `Add ${CHANNEL_LABELS[type]} channel`}
-                </button>
-              </div>
-            ))}
-          </div>
+          <label className="space-y-1">
+            <span className="text-xs font-bold uppercase text-slate-500">Section heading</span>
+            <input
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold outline-none focus:border-blue-400 focus:bg-white"
+              value={headings[activeType]}
+              onChange={(e) => setHeadings((current) => ({ ...current, [activeType]: e.target.value }))}
+            />
+          </label>
           <button
             type="button"
             onClick={saveHeadings}
@@ -394,7 +381,9 @@ export default function MediaChannelsPage() {
             {savingHeadings ? 'Saving headings...' : 'Save headings'}
           </button>
         </div>
+        )}
 
+        {filter !== 'all' && (
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50">
           <div className="mb-5">
             <h2 className="flex items-center gap-2 text-lg font-black text-slate-900">
@@ -403,7 +392,7 @@ export default function MediaChannelsPage() {
             </h2>
             <p className="mt-1 text-sm text-slate-500">
               {createIsVideoStream
-                ? 'Paste a YouTube video link. The app will use the video title and thumbnail automatically.'
+                ? 'Paste a YouTube video link. The app will generate only the thumbnail; the title is yours to enter.'
                 : 'Paste a stream URL, attach a logo, then publish it to the app.'}
             </p>
           </div>
@@ -417,7 +406,7 @@ export default function MediaChannelsPage() {
             />
             <input
               className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none focus:border-blue-400 focus:bg-white md:col-span-2"
-              placeholder={createIsVideoStream ? 'Optional manual title override' : 'Name'}
+              placeholder={createIsVideoStream ? 'Video title' : 'Name'}
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
@@ -505,15 +494,22 @@ export default function MediaChannelsPage() {
             className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
-            Create channel
+            {createIsVideoStream ? 'Add video' : 'Create channel'}
           </button>
         </div>
+        )}
 
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-200/50">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <div>
-              <h2 className="font-black text-slate-900">Channels</h2>
-              <p className="text-sm text-slate-500">Drag a card to reorder the app display.</p>
+              <h2 className="font-black text-slate-900">
+                {filter === 'all' ? 'All media' : `${CHANNEL_LABELS[filter]} ${filter === 'youtube2' || filter === 'youtube3' ? 'videos' : 'channels'}`}
+              </h2>
+              <p className="text-sm text-slate-500">
+                {filter === 'all'
+                  ? 'Choose a section above to edit its heading or add a new item.'
+                  : 'Drag a card to reorder this section in the app.'}
+              </p>
             </div>
           </div>
           {loading ? (
@@ -646,7 +642,7 @@ function ChannelEditor({
       />
       {isVideoStream && (
         <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
-          YouTube 2 and YouTube 3 use direct video links. The mobile app pulls the video title and thumbnail automatically.
+          YouTube 2 and YouTube 3 use direct video links. Enter the title manually; the app generates the thumbnail from the link.
         </p>
       )}
       {!isVideoStream && (
@@ -712,17 +708,9 @@ function ChannelEditor({
         />
       )}
       <div className="flex flex-wrap gap-2 items-center">
-        <select
-          className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
-          value={row.channel_type}
-          onChange={(e) => onChange({ ...row, channel_type: e.target.value })}
-        >
-          <option value="tv">tv</option>
-          <option value="radio">radio</option>
-          <option value="youtube">youtube</option>
-          <option value="youtube2">youtube2</option>
-          <option value="youtube3">youtube3</option>
-        </select>
+        <span className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-bold text-slate-700">
+          {CHANNEL_LABELS[row.channel_type as ChannelType] ?? row.channel_type}
+        </span>
         <input
           type="number"
           className="w-24 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
