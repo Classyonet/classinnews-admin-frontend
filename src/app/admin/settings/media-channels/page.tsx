@@ -70,6 +70,22 @@ export default function MediaChannelsPage() {
   const [headings, setHeadings] = useState<Record<ChannelType, string>>(DEFAULT_HEADINGS);
   const [savingHeadings, setSavingHeadings] = useState(false);
   const [draggedId, setDraggedId] = useState<string | null>(null);
+  const createType = form.channel_type;
+  const createIsVideoStream = createType === 'youtube2' || createType === 'youtube3';
+
+  const startCreateFor = (type: ChannelType) => {
+    setForm({
+      channel_type: type,
+      name: '',
+      stream_url: '',
+      logo_url: '',
+      description: '',
+      sort_order: 0,
+      is_active: true,
+    });
+    setCreateLogoNotice(null);
+    setFilter(type);
+  };
 
   const load = async () => {
     if (!token) return;
@@ -237,15 +253,7 @@ export default function MediaChannelsPage() {
       }, token);
       const j = await res.json();
       if (res.ok && j.success) {
-        setForm({
-          channel_type: 'radio',
-          name: '',
-          stream_url: '',
-          logo_url: '',
-          description: '',
-          sort_order: 0,
-          is_active: true,
-        });
+        startCreateFor(form.channel_type);
         load();
       } else alert(j.error || 'Create failed');
     } finally {
@@ -284,8 +292,6 @@ export default function MediaChannelsPage() {
     { label: 'YouTube 2', icon: Youtube, value: rows.filter((row) => row.channel_type === 'youtube2').length, color: 'text-rose-200' },
     { label: 'YouTube 3', icon: Youtube, value: rows.filter((row) => row.channel_type === 'youtube3').length, color: 'text-rose-200' },
   ];
-  const createIsVideoStream = form.channel_type === 'youtube2' || form.channel_type === 'youtube3';
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 p-6">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -342,19 +348,41 @@ export default function MediaChannelsPage() {
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50">
           <div className="mb-5">
-            <h2 className="text-lg font-black text-slate-900">Mobile section headings</h2>
-            <p className="mt-1 text-sm text-slate-500">Change the titles shown above TV, Radio, YouTube, YouTube 2, and YouTube 3 in the app.</p>
+            <h2 className="text-lg font-black text-slate-900">Section settings</h2>
+            <p className="mt-1 text-sm text-slate-500">Each mobile media section has its own heading and add button.</p>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
             {CHANNEL_TYPES.map((type) => (
-              <label key={type} className="space-y-1">
-                <span className="text-xs font-bold uppercase text-slate-500">{CHANNEL_LABELS[type]}</span>
-                <input
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold outline-none focus:border-blue-400 focus:bg-white"
-                  value={headings[type]}
-                  onChange={(e) => setHeadings((current) => ({ ...current, [type]: e.target.value }))}
-                />
-              </label>
+              <div
+                key={type}
+                className={`rounded-2xl border p-4 transition ${
+                  createType === type
+                    ? 'border-blue-300 bg-blue-50/60 shadow-sm'
+                    : 'border-slate-200 bg-slate-50'
+                }`}
+              >
+                <label className="space-y-1">
+                  <span className="text-xs font-bold uppercase text-slate-500">{CHANNEL_LABELS[type]} heading</span>
+                  <input
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-semibold outline-none focus:border-blue-400"
+                    value={headings[type]}
+                    onChange={(e) => setHeadings((current) => ({ ...current, [type]: e.target.value }))}
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => startCreateFor(type)}
+                  className={`mt-3 w-full rounded-xl px-3 py-2 text-sm font-black transition ${
+                    createType === type
+                      ? 'bg-blue-700 text-white hover:bg-blue-800'
+                      : 'bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  {type === 'youtube2' || type === 'youtube3'
+                    ? `Add ${CHANNEL_LABELS[type]} video`
+                    : `Add ${CHANNEL_LABELS[type]} channel`}
+                </button>
+              </div>
             ))}
           </div>
           <button
@@ -371,7 +399,7 @@ export default function MediaChannelsPage() {
           <div className="mb-5">
             <h2 className="flex items-center gap-2 text-lg font-black text-slate-900">
               <span className="rounded-xl bg-blue-50 p-2 text-blue-700"><Plus className="h-4 w-4" /></span>
-              Add channel
+              {createIsVideoStream ? `Add ${CHANNEL_LABELS[createType]} video` : `Add ${CHANNEL_LABELS[createType]} channel`}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
               {createIsVideoStream
@@ -380,20 +408,9 @@ export default function MediaChannelsPage() {
             </p>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <select
-              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold outline-none focus:border-blue-400 focus:bg-white"
-              value={form.channel_type}
-              onChange={(e) => setForm({ ...form, channel_type: e.target.value as ChannelType })}
-            >
-              <option value="tv">TV</option>
-              <option value="radio">Radio</option>
-              <option value="youtube">YouTube</option>
-              <option value="youtube2">YouTube 2</option>
-              <option value="youtube3">YouTube 3</option>
-            </select>
             <input
               type="number"
-              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none focus:border-blue-400 focus:bg-white"
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none focus:border-blue-400 focus:bg-white md:col-span-2"
               placeholder="sort_order"
               value={form.sort_order}
               onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) || 0 })}
