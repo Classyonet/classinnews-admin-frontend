@@ -20,15 +20,16 @@ interface ChannelRow {
   is_active: boolean;
 }
 
-type ChannelType = 'tv' | 'radio' | 'youtube' | 'youtube2' | 'youtube3';
+type ChannelType = 'tv' | 'radio' | 'youtube' | 'youtube2' | 'youtube3' | 'youtube4';
 type ChannelFilter = 'all' | ChannelType;
-const CHANNEL_TYPES: ChannelType[] = ['tv', 'radio', 'youtube', 'youtube2', 'youtube3'];
+const CHANNEL_TYPES: ChannelType[] = ['tv', 'radio', 'youtube', 'youtube2', 'youtube3', 'youtube4'];
 const CHANNEL_LABELS: Record<ChannelType, string> = {
   tv: 'TV',
   radio: 'Radio',
   youtube: 'YouTube',
   youtube2: 'YouTube 2',
   youtube3: 'YouTube 3',
+  youtube4: 'YouTube 4',
 };
 const DEFAULT_HEADINGS: Record<ChannelType, string> = {
   tv: 'TV',
@@ -36,6 +37,7 @@ const DEFAULT_HEADINGS: Record<ChannelType, string> = {
   youtube: 'YOUTUBE LATEST',
   youtube2: 'YOUTUBE 2',
   youtube3: 'YOUTUBE 3',
+  youtube4: 'YOUTUBE 4',
 };
 type MediaItem = {
   id: string;
@@ -72,7 +74,7 @@ export default function MediaChannelsPage() {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const activeType = filter === 'all' ? 'tv' : filter;
   const createType = form.channel_type;
-  const createIsVideoStream = createType === 'youtube2' || createType === 'youtube3';
+  const createIsVideoStream = createType === 'youtube2' || createType === 'youtube3' || createType === 'youtube4';
 
   const startCreateFor = (type: ChannelType) => {
     setForm({
@@ -238,7 +240,7 @@ export default function MediaChannelsPage() {
   };
 
   const create = async () => {
-    const isVideoStream = form.channel_type === 'youtube2' || form.channel_type === 'youtube3';
+    const isVideoStream = form.channel_type === 'youtube2' || form.channel_type === 'youtube3' || form.channel_type === 'youtube4';
     if (!form.name.trim() || !form.stream_url.trim()) {
       alert(isVideoStream ? 'Video title and YouTube video URL are required' : 'Name and stream URL are required');
       return;
@@ -298,6 +300,7 @@ export default function MediaChannelsPage() {
     { label: 'YouTube', icon: Youtube, value: rows.filter((row) => row.channel_type === 'youtube').length, color: 'text-rose-200' },
     { label: 'YouTube 2', icon: Youtube, value: rows.filter((row) => row.channel_type === 'youtube2').length, color: 'text-rose-200' },
     { label: 'YouTube 3', icon: Youtube, value: rows.filter((row) => row.channel_type === 'youtube3').length, color: 'text-rose-200' },
+    { label: 'YouTube 4', icon: Youtube, value: rows.filter((row) => row.channel_type === 'youtube4').length, color: 'text-rose-200' },
   ];
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-slate-100 p-6">
@@ -319,7 +322,7 @@ export default function MediaChannelsPage() {
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
               {channelStats.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -361,7 +364,7 @@ export default function MediaChannelsPage() {
           <div className="mb-5">
             <h2 className="text-lg font-black text-slate-900">{CHANNEL_LABELS[activeType]} settings</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Change this section heading and manage only its {activeType === 'youtube2' || activeType === 'youtube3' ? 'videos' : 'channels'}.
+              Change this section heading and manage only its {activeType === 'youtube2' || activeType === 'youtube3' || activeType === 'youtube4' ? 'videos' : 'channels'}.
             </p>
           </div>
           <label className="space-y-1">
@@ -503,7 +506,7 @@ export default function MediaChannelsPage() {
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <div>
               <h2 className="font-black text-slate-900">
-                {filter === 'all' ? 'All media' : `${CHANNEL_LABELS[filter]} ${filter === 'youtube2' || filter === 'youtube3' ? 'videos' : 'channels'}`}
+                {filter === 'all' ? 'All media' : `${CHANNEL_LABELS[filter]} ${filter === 'youtube2' || filter === 'youtube3' || filter === 'youtube4' ? 'videos' : 'channels'}`}
               </h2>
               <p className="text-sm text-slate-500">
                 {filter === 'all'
@@ -574,7 +577,7 @@ function ChannelEditor({
   onBrowseLogo: () => void;
 }) {
   const Icon = row.channel_type === 'radio' ? Radio : row.channel_type.startsWith('youtube') ? Youtube : Tv;
-  const isVideoStream = row.channel_type === 'youtube2' || row.channel_type === 'youtube3';
+  const isVideoStream = row.channel_type === 'youtube2' || row.channel_type === 'youtube3' || row.channel_type === 'youtube4';
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadNotice, setUploadNotice] = useState<string | null>(null);
 

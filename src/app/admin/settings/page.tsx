@@ -1279,6 +1279,12 @@ export default function SystemSettingsPage() {
               TV, Radio & YouTube
             </button>
             <button
+              onClick={() => window.location.href = '/admin/settings/news-flash'}
+              className="px-4 py-3 font-semibold text-sm transition-all duration-300 border-b-4 border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
+            >
+              News Flash
+            </button>
+            <button
               onClick={() => window.location.href = '/admin/settings/commission'}
               className="px-4 py-3 font-semibold text-sm transition-all duration-300 border-b-4 border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             >
