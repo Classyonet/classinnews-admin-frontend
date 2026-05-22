@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { getApiUrl } from '@/lib/api-config';
 import { settingsAPI } from '@/lib/api';
@@ -75,6 +75,87 @@ interface Subscriber {
   is_active: boolean;
   subscription_type: string;
   notification_count: number;
+}
+
+function HtmlContentEditor({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const insertSnippet = (before: string, after = '') => {
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      onChange(`${value}${before}${after}`);
+      return;
+    }
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = value.slice(start, end);
+    const nextValue = `${value.slice(0, start)}${before}${selected}${after}${value.slice(end)}`;
+    onChange(nextValue);
+
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const cursor = selected
+        ? start + before.length + selected.length + after.length
+        : start + before.length;
+      textarea.setSelectionRange(cursor, cursor);
+    });
+  };
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+      <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 p-3">
+        <label className="text-sm font-bold text-slate-700">{label}</label>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { text: 'H1', before: '<h1>', after: '</h1>' },
+            { text: 'H2', before: '<h2>', after: '</h2>' },
+            { text: 'P', before: '<p>', after: '</p>' },
+            { text: 'B', before: '<strong>', after: '</strong>' },
+            { text: 'I', before: '<em>', after: '</em>' },
+            { text: 'List', before: '<ul>\n<li>', after: '</li>\n</ul>' },
+            { text: 'Link', before: '<a href="https://">', after: '</a>' },
+          ].map((item) => (
+            <button
+              key={item.text}
+              type="button"
+              onClick={() => insertSnippet(item.before, item.after)}
+              className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
+            >
+              {item.text}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="grid gap-0 lg:grid-cols-2">
+        <textarea
+          ref={textareaRef}
+          rows={12}
+          className="min-h-[260px] w-full resize-y border-0 p-4 font-mono text-sm outline-none focus:ring-0"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+        />
+        <div className="min-h-[260px] border-t border-slate-200 bg-white p-4 lg:border-l lg:border-t-0">
+          <div className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-400">Preview</div>
+          <div
+            className="prose prose-slate max-w-none text-sm"
+            dangerouslySetInnerHTML={{ __html: value || '<p>Preview appears here.</p>' }}
+          />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // Ads Settings Tab Component
@@ -1304,6 +1385,7 @@ export default function SystemSettingsPage() {
               className="px-4 py-3 font-semibold text-sm transition-all duration-300 border-b-4 border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             >
               Cache Control
+            </button>
             <button
               onClick={() => setSiteSubTab('pages')}
               className={`px-4 py-3 font-semibold text-sm transition-all duration-300 border-b-4 ${
@@ -1667,41 +1749,29 @@ export default function SystemSettingsPage() {
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-bold text-slate-800">Static Pages Content (HTML allowed)</h4>
-                <p className="text-sm text-slate-600 mb-4">You can use standard HTML formatting (like &lt;h1&gt;, &lt;b&gt;, &lt;p&gt;) to style these pages.</p>
-                
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">About Us Page Content</label>
-                  <textarea
-                    rows={8}
-                    className="w-full rounded-md border border-slate-200 p-3 focus:border-indigo-500 focus:ring-indigo-500"
-                    value={settings.page_about}
-                    onChange={(e) => setSettings({ ...settings, page_about: e.target.value })}
-                    placeholder="<h1>About Classy News</h1><p>We are...</p>"
-                  />
-                </div>
+                <h4 className="font-bold text-slate-800">Static Pages Content</h4>
+                <p className="text-sm text-slate-600 mb-4">Use the editor buttons for common formatting, then check the preview before saving.</p>
 
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Contact Us Page Content</label>
-                  <textarea
-                    rows={8}
-                    className="w-full rounded-md border border-slate-200 p-3 focus:border-indigo-500 focus:ring-indigo-500"
-                    value={settings.page_contact}
-                    onChange={(e) => setSettings({ ...settings, page_contact: e.target.value })}
-                    placeholder="<h1>Contact Us</h1><p>Email us at...</p>"
-                  />
-                </div>
+                <HtmlContentEditor
+                  label="About Us Page Content"
+                  value={settings.page_about}
+                  onChange={(page_about) => setSettings({ ...settings, page_about })}
+                  placeholder="<h1>About Classy News</h1><p>We are...</p>"
+                />
 
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Privacy Policy Page Content</label>
-                  <textarea
-                    rows={8}
-                    className="w-full rounded-md border border-slate-200 p-3 focus:border-indigo-500 focus:ring-indigo-500"
-                    value={settings.page_privacy_policy}
-                    onChange={(e) => setSettings({ ...settings, page_privacy_policy: e.target.value })}
-                    placeholder="<h1>Privacy Policy</h1><p>Your privacy...</p>"
-                  />
-                </div>
+                <HtmlContentEditor
+                  label="Contact Us Page Content"
+                  value={settings.page_contact}
+                  onChange={(page_contact) => setSettings({ ...settings, page_contact })}
+                  placeholder="<h1>Contact Us</h1><p>Email us at...</p>"
+                />
+
+                <HtmlContentEditor
+                  label="Privacy Policy Page Content"
+                  value={settings.page_privacy_policy}
+                  onChange={(page_privacy_policy) => setSettings({ ...settings, page_privacy_policy })}
+                  placeholder="<h1>Privacy Policy</h1><p>Your privacy...</p>"
+                />
               </div>
 
               <div className="pt-4">

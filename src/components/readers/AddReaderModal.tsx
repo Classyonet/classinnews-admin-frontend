@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { API_URL } from '@/lib/api-config'
+import { adminApiFetch } from '@/lib/admin-session'
 
 interface AddReaderModalProps {
   isOpen: boolean
@@ -42,14 +43,13 @@ export function AddReaderModal({ isOpen, onClose, onSuccess }: AddReaderModalPro
 
     try {
       const token = localStorage.getItem('admin_token')
-      const response = await fetch(`${API_URL}/api/users/readers`, {
+      const response = await adminApiFetch(`${API_URL}/api/users/readers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(formData)
-      })
+      }, token)
 
       const data = await response.json()
 
