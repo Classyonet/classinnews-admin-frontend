@@ -6,8 +6,9 @@ import { usersAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Users, MoreVertical, UserCheck, UserX } from 'lucide-react';
+import { Search, Users, MoreVertical, UserCheck, UserX, UserPlus } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
+import { AddReaderModal } from '@/components/readers/AddReaderModal';
 
 interface Reader {
   id: string;
@@ -29,6 +30,7 @@ export default function ReadersPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -111,9 +113,15 @@ export default function ReadersPage() {
           <h1 className="text-3xl font-bold text-gray-900">News Readers</h1>
           <p className="text-gray-500 mt-1">Manage registered news readers and their accounts</p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Users className="w-4 h-4" />
-          <span>{readers.length} readers</span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Users className="w-4 h-4" />
+            <span>{readers.length} readers</span>
+          </div>
+          <Button onClick={() => setIsAddModalOpen(true)} className="bg-purple-600 hover:bg-purple-700">
+            <UserPlus className="w-4 h-4 mr-2" />
+            Add Reader
+          </Button>
         </div>
       </div>
 
@@ -244,6 +252,14 @@ export default function ReadersPage() {
           )}
         </CardContent>
       </Card>
+
+      <AddReaderModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSuccess={() => {
+          fetchReaders();
+        }}
+      />
     </div>
   );
 }

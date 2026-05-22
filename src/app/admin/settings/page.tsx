@@ -745,6 +745,11 @@ export default function SystemSettingsPage() {
     push_desktop_enabled: 'true',
     push_mobile_enabled: 'true',
     push_popup_reappear_days: '7',
+    // Pages settings
+    page_about: '',
+    page_contact: '',
+    page_privacy_policy: '',
+    footer_footnote: 'Classy News - Your trusted source for the latest updates and breaking news.',
   });
 
   // Prohibited Words state
@@ -905,6 +910,10 @@ export default function SystemSettingsPage() {
     social_instagram_url: { type: 'string', category: 'homepage' },
     social_youtube_url: { type: 'string', category: 'homepage' },
     social_email_url: { type: 'string', category: 'homepage' },
+    page_about: { type: 'string', category: 'pages' },
+    page_contact: { type: 'string', category: 'pages' },
+    page_privacy_policy: { type: 'string', category: 'pages' },
+    footer_footnote: { type: 'string', category: 'pages' },
   };
 
   const handleSaveSettings = async () => {
@@ -1295,6 +1304,15 @@ export default function SystemSettingsPage() {
               className="px-4 py-3 font-semibold text-sm transition-all duration-300 border-b-4 border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300"
             >
               Cache Control
+            <button
+              onClick={() => setSiteSubTab('pages')}
+              className={`px-4 py-3 font-semibold text-sm transition-all duration-300 border-b-4 ${
+                siteSubTab === 'pages'
+                  ? 'border-purple-600 text-purple-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Pages & Footer
             </button>
           </div>
 
@@ -1622,6 +1640,74 @@ export default function SystemSettingsPage() {
                 <Button onClick={handleSaveSettings} className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg shadow-purple-500/30 gap-2">
                   <Save className="w-4 h-4" />
                   Save Settings
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Pages Sub-tab Content */}
+          {siteSubTab === 'pages' && (
+            <div className="space-y-6">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 space-y-4">
+                <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-indigo-600" />
+                  Footer & Global Text
+                </h4>
+                
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Footer Footnote</label>
+                  <p className="text-xs text-slate-500 mb-2">This text appears at the very bottom of the Newsportal footer.</p>
+                  <Input
+                    type="text"
+                    value={settings.footer_footnote}
+                    onChange={(e) => setSettings({ ...settings, footer_footnote: e.target.value })}
+                    className="border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="font-bold text-slate-800">Static Pages Content (HTML allowed)</h4>
+                <p className="text-sm text-slate-600 mb-4">You can use standard HTML formatting (like &lt;h1&gt;, &lt;b&gt;, &lt;p&gt;) to style these pages.</p>
+                
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">About Us Page Content</label>
+                  <textarea
+                    rows={8}
+                    className="w-full rounded-md border border-slate-200 p-3 focus:border-indigo-500 focus:ring-indigo-500"
+                    value={settings.page_about}
+                    onChange={(e) => setSettings({ ...settings, page_about: e.target.value })}
+                    placeholder="<h1>About Classy News</h1><p>We are...</p>"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Contact Us Page Content</label>
+                  <textarea
+                    rows={8}
+                    className="w-full rounded-md border border-slate-200 p-3 focus:border-indigo-500 focus:ring-indigo-500"
+                    value={settings.page_contact}
+                    onChange={(e) => setSettings({ ...settings, page_contact: e.target.value })}
+                    placeholder="<h1>Contact Us</h1><p>Email us at...</p>"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Privacy Policy Page Content</label>
+                  <textarea
+                    rows={8}
+                    className="w-full rounded-md border border-slate-200 p-3 focus:border-indigo-500 focus:ring-indigo-500"
+                    value={settings.page_privacy_policy}
+                    onChange={(e) => setSettings({ ...settings, page_privacy_policy: e.target.value })}
+                    placeholder="<h1>Privacy Policy</h1><p>Your privacy...</p>"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <Button onClick={handleSaveSettings} className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-lg shadow-indigo-500/30 gap-2">
+                  <Save className="w-4 h-4" />
+                  Save Pages
                 </Button>
               </div>
             </div>
