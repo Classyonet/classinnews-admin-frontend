@@ -77,6 +77,41 @@ interface Subscriber {
   notification_count: number;
 }
 
+type CustomPageEntry = {
+  title: string;
+  slug: string;
+  content: string;
+  placement: 'header' | 'footer' | 'both' | 'none';
+  footerColumn: 'quick' | 'legal' | 'none';
+  isActive: boolean;
+};
+
+const emptyCustomPage: CustomPageEntry = {
+  title: '',
+  slug: '',
+  content: '',
+  placement: 'footer',
+  footerColumn: 'legal',
+  isActive: true,
+};
+
+function slugifyPageTitle(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function parseCustomPagesSetting(raw: string): CustomPageEntry[] {
+  try {
+    const pages = JSON.parse(raw || '[]');
+    return Array.isArray(pages) ? pages : [];
+  } catch {
+    return [];
+  }
+}
+
 function HtmlContentEditor({
   label,
   value,
@@ -831,7 +866,9 @@ export default function SystemSettingsPage() {
     page_contact: '',
     page_privacy_policy: '',
     footer_footnote: 'Classy News - Your trusted source for the latest updates and breaking news.',
+    custom_pages: '[]',
   });
+  const [customPageDraft, setCustomPageDraft] = useState<CustomPageEntry>(emptyCustomPage);
 
   // Prohibited Words state
   const [words, setWords] = useState<ProhibitedWord[]>([]);
@@ -995,6 +1032,36 @@ export default function SystemSettingsPage() {
     page_contact: { type: 'string', category: 'pages' },
     page_privacy_policy: { type: 'string', category: 'pages' },
     footer_footnote: { type: 'string', category: 'pages' },
+    custom_pages: { type: 'json', category: 'pages' },
+  };
+
+  const customPages = parseCustomPagesSetting(settings.custom_pages);
+
+  const saveCustomPagesToState = (pages: CustomPageEntry[]) => {
+    setSettings({ ...settings, custom_pages: JSON.stringify(pages, null, 2) });
+  };
+
+  const addCustomPage = () => {
+    const title = customPageDraft.title.trim();
+    const slug = (customPageDraft.slug.trim() || slugifyPageTitle(title)).replace(/^\/+|\/+$/g, '');
+    if (!title || !slug || !customPageDraft.content.trim()) {
+      alert('Custom page title, slug, and content are required.');
+      return;
+    }
+    if (customPages.some((page) => page.slug === slug)) {
+      alert('A custom page with this slug already exists.');
+      return;
+    }
+    saveCustomPagesToState([...customPages, { ...customPageDraft, title, slug }]);
+    setCustomPageDraft(emptyCustomPage);
+  };
+
+  const removeCustomPage = (slug: string) => {
+    saveCustomPagesToState(customPages.filter((page) => page.slug !== slug));
+  };
+
+  const updateCustomPage = (slug: string, patch: Partial<CustomPageEntry>) => {
+    saveCustomPagesToState(customPages.map((page) => page.slug === slug ? { ...page, ...patch } : page));
   };
 
   const handleSaveSettings = async () => {
@@ -1772,6 +1839,108 @@ export default function SystemSettingsPage() {
                   onChange={(page_privacy_policy) => setSettings({ ...settings, page_privacy_policy })}
                   placeholder="<h1>Privacy Policy</h1><p>Your privacy...</p>"
                 />
+
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                      <h4 className="font-bold text-slate-800">Custom Pages</h4>
+                      <p className="text-sm text-slate-500">Create extra pages and choose whether they appear in the header, footer, both, or nowhere.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Page Title</label>
+                      <Input
+                        value={customPageDraft.title}
+                        onChange={(e) => {
+                          const title = e.target.value;
+                          setCustomPageDraft({
+                            ...customPageDraft,
+                            title,
+                            slug: customPageDraft.slug || slugifyPageTitle(title),
+                          });
+                        }}
+                        placeholder="Advertise With Us"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Slug</label>
+                      <Input
+                        value={customPageDraft.slug}
+                        onChange={(e) => setCustomPageDraft({ ...customPageDraft, slug: slugifyPageTitle(e.target.value) })}
+                        placeholder="advertise-with-us"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Placement</label>
+                      <select
+                        value={customPageDraft.placement}
+                        onChange={(e) => setCustomPageDraft({ ...customPageDraft, placement: e.target.value as CustomPageEntry['placement'] })}
+                        className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+                      >
+                        <option value="footer">Footer only</option>
+                        <option value="header">Header only</option>
+                        <option value="both">Header and footer</option>
+                        <option value="none">Do not show in navigation</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Footer Column</label>
+                      <select
+                        value={customPageDraft.footerColumn}
+                        onChange={(e) => setCustomPageDraft({ ...customPageDraft, footerColumn: e.target.value as CustomPageEntry['footerColumn'] })}
+                        className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+                      >
+                        <option value="legal">Bottom legal links</option>
+                        <option value="quick">Quick Links column</option>
+                        <option value="none">No footer column</option>
+                      </select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <HtmlContentEditor
+                        label="Custom Page Content"
+                        value={customPageDraft.content}
+                        onChange={(content) => setCustomPageDraft({ ...customPageDraft, content })}
+                        placeholder="<h1>Advertise With Us</h1><p>Page content...</p>"
+                      />
+                    </div>
+                  </div>
+
+                  <Button type="button" onClick={addCustomPage} className="mt-4 gap-2 bg-indigo-600 hover:bg-indigo-700">
+                    <Plus className="h-4 w-4" />
+                    Add Custom Page
+                  </Button>
+
+                  <div className="mt-5 space-y-3">
+                    {customPages.length === 0 ? (
+                      <p className="rounded-lg bg-slate-50 p-4 text-sm text-slate-500">No custom pages created yet.</p>
+                    ) : customPages.map((page) => (
+                      <div key={page.slug} className="rounded-lg border border-slate-200 p-4">
+                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                          <div>
+                            <div className="font-semibold text-slate-900">{page.title}</div>
+                            <div className="text-xs text-slate-500">/pages/{page.slug} · {page.placement} · {page.footerColumn}</div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <label className="flex items-center gap-2 text-sm text-slate-600">
+                              <input
+                                type="checkbox"
+                                checked={page.isActive !== false}
+                                onChange={(e) => updateCustomPage(page.slug, { isActive: e.target.checked })}
+                              />
+                              Active
+                            </label>
+                            <Button type="button" variant="outline" onClick={() => removeCustomPage(page.slug)} className="gap-2 text-red-600">
+                              <Trash2 className="h-4 w-4" />
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div className="pt-4">
