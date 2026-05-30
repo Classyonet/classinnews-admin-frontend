@@ -218,6 +218,14 @@ export const settingsAPI = {
     }
   },
 
+  bulkUpdate: async (token: string, settings: any[]) => {
+    return apiFetch('/api/settings/bulk', {
+      method: 'PUT',
+      token,
+      body: JSON.stringify({ settings }),
+    });
+  },
+
   getActivityLogs: async (token: string, params?: any) => {
     const query = new URLSearchParams(params).toString();
     return apiFetch(`/api/settings/activity-logs?${query}`, { token });

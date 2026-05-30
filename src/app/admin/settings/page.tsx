@@ -1093,6 +1093,7 @@ export default function SystemSettingsPage() {
     // Pages settings
     page_about: '',
     page_contact: '',
+    page_terms_conditions: '',
     page_privacy_policy: '',
     footer_footnote: 'Classy News - Your trusted source for the latest updates and breaking news.',
     custom_pages: '[]',
@@ -1261,6 +1262,7 @@ export default function SystemSettingsPage() {
     social_email_url: { type: 'string', category: 'homepage' },
     page_about: { type: 'string', category: 'pages' },
     page_contact: { type: 'string', category: 'pages' },
+    page_terms_conditions: { type: 'string', category: 'pages' },
     page_privacy_policy: { type: 'string', category: 'pages' },
     footer_footnote: { type: 'string', category: 'pages' },
     custom_pages: { type: 'json', category: 'pages' },
@@ -1310,19 +1312,22 @@ export default function SystemSettingsPage() {
 
       setSavingSettings(true);
 
-      for (const [key, value] of entriesToSave) {
-        const meta = settingTypes[key] ?? { type: 'string', category: 'general' };
-
-        try {
-          await settingsAPI.update(token, key, {
-            value: String(value),
-            type: meta.type,
-            category: meta.category
-          });
-        } catch (error: any) {
-          console.error(`Failed to save setting ${key}:`, error);
-          errors.push(`${key}: ${error.message || 'Unknown error'}`);
-        }
+      try {
+        await settingsAPI.bulkUpdate(
+          token,
+          entriesToSave.map(([key, value]) => {
+            const meta = settingTypes[key] ?? { type: 'string', category: 'general' };
+            return {
+              key,
+              value: String(value),
+              type: meta.type,
+              category: meta.category
+            };
+          })
+        );
+      } catch (error: any) {
+        console.error('Bulk setting save failed:', error);
+        errors.push(error.message || 'Failed to save settings');
       }
 
       if (errors.length > 0) {
@@ -2069,6 +2074,13 @@ export default function SystemSettingsPage() {
                 />
 
                 <HtmlContentEditor
+                  label="Terms and Conditions Page Content"
+                  value={settings.page_terms_conditions}
+                  onChange={(page_terms_conditions) => setSettings({ ...settings, page_terms_conditions })}
+                  placeholder="<h1>Terms and Conditions</h1><p>Your full terms...</p>"
+                />
+
+                <HtmlContentEditor
                   label="Privacy Policy Page Content"
                   value={settings.page_privacy_policy}
                   onChange={(page_privacy_policy) => setSettings({ ...settings, page_privacy_policy })}
@@ -2155,7 +2167,7 @@ export default function SystemSettingsPage() {
                         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                           <div>
                             <div className="font-semibold text-slate-900">{page.title}</div>
-                            <div className="text-xs text-slate-500">/pages/{page.slug} · {page.placement} · {page.footerColumn}</div>
+                            <div className="text-xs text-slate-500">/pages/{page.slug} - {page.placement} - {page.footerColumn}</div>
                           </div>
                           <div className="flex items-center gap-3">
                             <label className="flex items-center gap-2 text-sm text-slate-600">
