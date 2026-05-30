@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { ClipboardEvent, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { getApiUrl } from '@/lib/api-config';
 import { settingsAPI } from '@/lib/api';
@@ -34,6 +34,16 @@ import {
   FileText,
   Layout,
   Smartphone,
+  Bold,
+  Italic,
+  List,
+  ListOrdered,
+  Link2,
+  Heading1,
+  Heading2,
+  Pilcrow,
+  Code2,
+  Sparkles,
 } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 
@@ -112,6 +122,85 @@ function parseCustomPagesSetting(raw: string): CustomPageEntry[] {
   }
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function textToHtml(value: string) {
+  const lines = value
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) {
+    return '';
+  }
+
+  const blocks: string[] = [];
+  let listType: 'ul' | 'ol' | null = null;
+  let listItems: string[] = [];
+
+  const flushList = () => {
+    if (!listType || listItems.length === 0) {
+      return;
+    }
+    blocks.push(`<${listType}>${listItems.map((item) => `<li>${item}</li>`).join('')}</${listType}>`);
+    listType = null;
+    listItems = [];
+  };
+
+  lines.forEach((line, index) => {
+    const orderedMatch = line.match(/^\d+[.)]\s+(.+)$/);
+    const bulletMatch = line.match(/^[-*•]\s+(.+)$/);
+
+    if (orderedMatch || bulletMatch) {
+      const nextType = orderedMatch ? 'ol' : 'ul';
+      const content = escapeHtml((orderedMatch?.[1] || bulletMatch?.[1] || '').trim());
+      if (listType !== nextType) {
+        flushList();
+        listType = nextType;
+      }
+      listItems.push(content);
+      return;
+    }
+
+    flushList();
+    const safeLine = escapeHtml(line);
+    const isFirstTitle = index === 0 && line.length <= 90 && !/[.!?]$/.test(line);
+    const isSectionHeading = line.length <= 80 && /:$/.test(line);
+
+    if (isFirstTitle) {
+      blocks.push(`<h1>${safeLine}</h1>`);
+    } else if (isSectionHeading) {
+      blocks.push(`<h2>${safeLine.replace(/:$/, '')}</h2>`);
+    } else {
+      blocks.push(`<p>${safeLine}</p>`);
+    }
+  });
+
+  flushList();
+  return blocks.join('\n');
+}
+
+function normalizeEditorHtml(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  if (/<[a-z][\s\S]*>/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  return textToHtml(trimmed);
+}
+
 function HtmlContentEditor({
   label,
   value,
@@ -124,6 +213,20 @@ function HtmlContentEditor({
   placeholder?: string;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const visualRef = useRef<HTMLDivElement | null>(null);
+  const [mode, setMode] = useState<'visual' | 'html' | 'preview'>('visual');
+  const [isVisualFocused, setIsVisualFocused] = useState(false);
+
+  useEffect(() => {
+    if (mode !== 'visual' || isVisualFocused || !visualRef.current) {
+      return;
+    }
+
+    const nextHtml = value || '';
+    if (visualRef.current.innerHTML !== nextHtml) {
+      visualRef.current.innerHTML = nextHtml;
+    }
+  }, [isVisualFocused, mode, value]);
 
   const insertSnippet = (before: string, after = '') => {
     const textarea = textareaRef.current;
@@ -147,47 +250,173 @@ function HtmlContentEditor({
     });
   };
 
+  const runVisualCommand = (command: string, commandValue?: string) => {
+    visualRef.current?.focus();
+    document.execCommand(command, false, commandValue);
+    onChange(visualRef.current?.innerHTML || '');
+  };
+
+  const addVisualLink = () => {
+    const url = window.prompt('Enter link URL');
+    if (!url) {
+      return;
+    }
+    runVisualCommand('createLink', url);
+  };
+
+  const handleVisualPaste = (event: ClipboardEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const html = event.clipboardData.getData('text/html');
+    const text = event.clipboardData.getData('text/plain');
+    const nextHtml = html ? normalizeEditorHtml(html) : textToHtml(text);
+    document.execCommand('insertHTML', false, nextHtml);
+    onChange(visualRef.current?.innerHTML || nextHtml);
+  };
+
+  const formatCurrentContent = () => {
+    const source = mode === 'visual'
+      ? visualRef.current?.innerText || value
+      : value;
+    const nextHtml = normalizeEditorHtml(source);
+    onChange(nextHtml);
+    if (visualRef.current) {
+      visualRef.current.innerHTML = nextHtml;
+    }
+    setMode('visual');
+  };
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
       <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 p-3">
-        <label className="text-sm font-bold text-slate-700">{label}</label>
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <label className="text-sm font-bold text-slate-700">{label}</label>
+          <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
+            {[
+              { key: 'visual', text: 'Visual' },
+              { key: 'html', text: 'HTML' },
+              { key: 'preview', text: 'Preview' },
+            ].map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setMode(item.key as 'visual' | 'html' | 'preview')}
+                className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
+                  mode === item.key
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                {item.text}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="flex flex-wrap gap-2">
-          {[
-            { text: 'H1', before: '<h1>', after: '</h1>' },
-            { text: 'H2', before: '<h2>', after: '</h2>' },
-            { text: 'P', before: '<p>', after: '</p>' },
-            { text: 'B', before: '<strong>', after: '</strong>' },
-            { text: 'I', before: '<em>', after: '</em>' },
-            { text: 'List', before: '<ul>\n<li>', after: '</li>\n</ul>' },
-            { text: 'Link', before: '<a href="https://">', after: '</a>' },
-          ].map((item) => (
-            <button
-              key={item.text}
-              type="button"
-              onClick={() => insertSnippet(item.before, item.after)}
-              className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
-            >
-              {item.text}
-            </button>
-          ))}
+          {mode === 'html' ? (
+            [
+              { icon: Heading1, label: 'Heading 1', before: '<h1>', after: '</h1>' },
+              { icon: Heading2, label: 'Heading 2', before: '<h2>', after: '</h2>' },
+              { icon: Pilcrow, label: 'Paragraph', before: '<p>', after: '</p>' },
+              { icon: Bold, label: 'Bold', before: '<strong>', after: '</strong>' },
+              { icon: Italic, label: 'Italic', before: '<em>', after: '</em>' },
+              { icon: List, label: 'Bulleted list', before: '<ul>\n<li>', after: '</li>\n</ul>' },
+              { icon: Link2, label: 'Link', before: '<a href="https://">', after: '</a>' },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => insertSnippet(item.before, item.after)}
+                  title={item.label}
+                  className="rounded-md border border-slate-200 bg-white p-2 text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
+                >
+                  <Icon className="h-4 w-4" />
+                </button>
+              );
+            })
+          ) : (
+            [
+              { icon: Heading1, label: 'Heading 1', action: () => runVisualCommand('formatBlock', 'h1') },
+              { icon: Heading2, label: 'Heading 2', action: () => runVisualCommand('formatBlock', 'h2') },
+              { icon: Pilcrow, label: 'Paragraph', action: () => runVisualCommand('formatBlock', 'p') },
+              { icon: Bold, label: 'Bold', action: () => runVisualCommand('bold') },
+              { icon: Italic, label: 'Italic', action: () => runVisualCommand('italic') },
+              { icon: List, label: 'Bulleted list', action: () => runVisualCommand('insertUnorderedList') },
+              { icon: ListOrdered, label: 'Numbered list', action: () => runVisualCommand('insertOrderedList') },
+              { icon: Link2, label: 'Link', action: addVisualLink },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={item.action}
+                  title={item.label}
+                  className="rounded-md border border-slate-200 bg-white p-2 text-slate-700 hover:border-indigo-300 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={mode === 'preview'}
+                >
+                  <Icon className="h-4 w-4" />
+                </button>
+              );
+            })
+          )}
+          <button
+            type="button"
+            onClick={formatCurrentContent}
+            className="inline-flex items-center gap-2 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100"
+          >
+            <Sparkles className="h-4 w-4" />
+            Auto format
+          </button>
         </div>
       </div>
-      <div className="grid gap-0 lg:grid-cols-2">
-        <textarea
-          ref={textareaRef}
-          rows={12}
-          className="min-h-[260px] w-full resize-y border-0 p-4 font-mono text-sm outline-none focus:ring-0"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-        />
-        <div className="min-h-[260px] border-t border-slate-200 bg-white p-4 lg:border-l lg:border-t-0">
-          <div className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-400">Preview</div>
+
+      <div className="bg-white">
+        {mode === 'visual' && (
           <div
-            className="prose prose-slate max-w-none text-sm"
-            dangerouslySetInnerHTML={{ __html: value || '<p>Preview appears here.</p>' }}
+            ref={visualRef}
+            contentEditable
+            suppressContentEditableWarning
+            onFocus={() => setIsVisualFocused(true)}
+            onBlur={() => setIsVisualFocused(false)}
+            onInput={(event) => onChange(event.currentTarget.innerHTML)}
+            onPaste={handleVisualPaste}
+            className="prose prose-slate min-h-[320px] max-w-none p-5 text-sm outline-none empty:before:pointer-events-none empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)] focus:ring-2 focus:ring-inset focus:ring-indigo-200"
+            data-placeholder={placeholder || 'Write page content...'}
           />
-        </div>
+        )}
+
+        {mode === 'html' && (
+          <div className="relative">
+            <div className="pointer-events-none absolute right-3 top-3 inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs font-bold text-slate-500">
+              <Code2 className="h-3.5 w-3.5" />
+              HTML
+            </div>
+            <textarea
+              ref={textareaRef}
+              rows={16}
+              className="min-h-[320px] w-full resize-y border-0 p-5 font-mono text-sm outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-200"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={placeholder}
+            />
+          </div>
+        )}
+
+        {mode === 'preview' && (
+          <div className="min-h-[320px] bg-white p-5">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-md bg-slate-100 px-2 py-1 text-xs font-bold uppercase tracking-wide text-slate-500">
+              <Eye className="h-3.5 w-3.5" />
+              Preview
+            </div>
+            <div
+              className="prose prose-slate max-w-none text-sm"
+              dangerouslySetInnerHTML={{ __html: value || '<p>Preview appears here.</p>' }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -902,6 +1131,7 @@ export default function SystemSettingsPage() {
   const [uploadingMobileLogo, setUploadingMobileLogo] = useState(false);
   const [uploadingFavicon, setUploadingFavicon] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
+  const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
     fetchActivityLogs();
@@ -1012,6 +1242,7 @@ export default function SystemSettingsPage() {
     trending_topics_auto_delete: { type: 'boolean', category: 'general' },
     trending_topics_retention_days: { type: 'number', category: 'general' },
     site_logo_url: { type: 'string', category: 'general' },
+    site_mobile_logo_url: { type: 'string', category: 'general' },
     site_favicon_url: { type: 'string', category: 'general' },
     homepage_carousel_enabled: { type: 'boolean', category: 'homepage' },
     homepage_carousel_interval: { type: 'number', category: 'homepage' },
@@ -1064,42 +1295,46 @@ export default function SystemSettingsPage() {
     saveCustomPagesToState(customPages.map((page) => page.slug === slug ? { ...page, ...patch } : page));
   };
 
-  const handleSaveSettings = async () => {
+  const handleSaveSettings = async (category?: string) => {
     if (!token) {
       alert('You must be logged in as an admin to save settings.');
       return;
     }
 
     try {
-      const savePromises = [];
       const errors: string[] = [];
-
-      for (const [key, value] of Object.entries(settings)) {
+      const entriesToSave = Object.entries(settings).filter(([key]) => {
         const meta = settingTypes[key] ?? { type: 'string', category: 'general' };
-        
-        const savePromise = settingsAPI.update(token, key, { 
-          value: String(value),
-          type: meta.type,
-          category: meta.category
-        }).catch((error: any) => {
+        return category ? meta.category === category : true;
+      });
+
+      setSavingSettings(true);
+
+      for (const [key, value] of entriesToSave) {
+        const meta = settingTypes[key] ?? { type: 'string', category: 'general' };
+
+        try {
+          await settingsAPI.update(token, key, {
+            value: String(value),
+            type: meta.type,
+            category: meta.category
+          });
+        } catch (error: any) {
           console.error(`Failed to save setting ${key}:`, error);
           errors.push(`${key}: ${error.message || 'Unknown error'}`);
-          return null;
-        });
-        
-        savePromises.push(savePromise);
+        }
       }
-
-      await Promise.all(savePromises);
 
       if (errors.length > 0) {
         alert(`Some settings failed to save:\n${errors.join('\n')}`);
       } else {
-        alert('Settings saved successfully!');
+        alert(`${category === 'pages' ? 'Pages' : 'Settings'} saved successfully!`);
       }
     } catch (error) {
       console.error('Failed to save settings:', error);
       alert('Failed to save settings');
+    } finally {
+      setSavingSettings(false);
     }
   };
 
@@ -1786,7 +2021,7 @@ export default function SystemSettingsPage() {
               </div>
 
               <div className="pt-4">
-                <Button onClick={handleSaveSettings} className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg shadow-purple-500/30 gap-2">
+                <Button onClick={() => handleSaveSettings('general')} disabled={savingSettings} className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg shadow-purple-500/30 gap-2 disabled:opacity-60">
                   <Save className="w-4 h-4" />
                   Save Settings
                 </Button>
@@ -1944,7 +2179,7 @@ export default function SystemSettingsPage() {
               </div>
 
               <div className="pt-4">
-                <Button onClick={handleSaveSettings} className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-lg shadow-indigo-500/30 gap-2">
+                <Button onClick={() => handleSaveSettings('pages')} disabled={savingSettings} className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-lg shadow-indigo-500/30 gap-2 disabled:opacity-60">
                   <Save className="w-4 h-4" />
                   Save Pages
                 </Button>
@@ -1987,7 +2222,7 @@ export default function SystemSettingsPage() {
               </div>
 
               <div className="pt-4">
-                <Button onClick={handleSaveSettings} className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg shadow-purple-500/30 gap-2">
+                <Button onClick={() => handleSaveSettings('general')} disabled={savingSettings} className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg shadow-purple-500/30 gap-2 disabled:opacity-60">
                   <Save className="w-4 h-4" />
                   Save Settings
                 </Button>
@@ -2138,7 +2373,7 @@ export default function SystemSettingsPage() {
               </div>
 
               <div className="pt-4 flex gap-3">
-                <Button onClick={handleSaveSettings} className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg shadow-blue-500/30 gap-2">
+                <Button onClick={() => handleSaveSettings('general')} disabled={savingSettings} className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg shadow-blue-500/30 gap-2 disabled:opacity-60">
                   <Save className="w-4 h-4" />
                   Save Notification Settings
                 </Button>
@@ -2173,7 +2408,7 @@ export default function SystemSettingsPage() {
               </div>
 
               <div className="pt-4">
-                <Button onClick={handleSaveSettings} className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg shadow-blue-500/30 gap-2">
+                <Button onClick={() => handleSaveSettings('general')} disabled={savingSettings} className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg shadow-blue-500/30 gap-2 disabled:opacity-60">
                   <Save className="w-4 h-4" />
                   Save Mobile Settings
                 </Button>
@@ -2223,7 +2458,7 @@ export default function SystemSettingsPage() {
               </div>
 
               <div className="pt-4">
-                <Button onClick={handleSaveSettings} className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg shadow-blue-500/30 gap-2">
+                <Button onClick={() => handleSaveSettings('general')} disabled={savingSettings} className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg shadow-blue-500/30 gap-2 disabled:opacity-60">
                   <Save className="w-4 h-4" />
                   Save Desktop Settings
                 </Button>
@@ -2359,7 +2594,7 @@ export default function SystemSettingsPage() {
               </div>
 
               <div className="pt-4">
-                <Button onClick={handleSaveSettings} className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-lg shadow-pink-500/30 gap-2">
+                <Button onClick={() => handleSaveSettings('homepage')} disabled={savingSettings} className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-lg shadow-pink-500/30 gap-2 disabled:opacity-60">
                   <Save className="w-4 h-4" />
                   Save Settings
                 </Button>
