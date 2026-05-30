@@ -1094,7 +1094,11 @@ export default function SystemSettingsPage() {
     page_about: '',
     page_contact: '',
     page_terms_conditions: '',
+    page_terms_placement: 'footer',
+    page_terms_footer_column: 'legal',
     page_privacy_policy: '',
+    page_privacy_placement: 'footer',
+    page_privacy_footer_column: 'legal',
     footer_footnote: 'Classy News - Your trusted source for the latest updates and breaking news.',
     custom_pages: '[]',
   });
@@ -1263,7 +1267,11 @@ export default function SystemSettingsPage() {
     page_about: { type: 'string', category: 'pages' },
     page_contact: { type: 'string', category: 'pages' },
     page_terms_conditions: { type: 'string', category: 'pages' },
+    page_terms_placement: { type: 'string', category: 'pages' },
+    page_terms_footer_column: { type: 'string', category: 'pages' },
     page_privacy_policy: { type: 'string', category: 'pages' },
+    page_privacy_placement: { type: 'string', category: 'pages' },
+    page_privacy_footer_column: { type: 'string', category: 'pages' },
     footer_footnote: { type: 'string', category: 'pages' },
     custom_pages: { type: 'json', category: 'pages' },
   };
@@ -2052,6 +2060,70 @@ export default function SystemSettingsPage() {
                     onChange={(e) => setSettings({ ...settings, footer_footnote: e.target.value })}
                     className="border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                   />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-lg border border-indigo-100 bg-white p-4">
+                    <h5 className="font-bold text-slate-800">Terms and Conditions Link</h5>
+                    <p className="mb-3 mt-1 text-xs text-slate-500">Controls where the built-in /terms page appears.</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-xs font-bold text-slate-600">Placement</label>
+                        <select
+                          value={settings.page_terms_placement}
+                          onChange={(e) => setSettings({ ...settings, page_terms_placement: e.target.value })}
+                          className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+                        >
+                          <option value="footer">Footer only</option>
+                          <option value="header">Header only</option>
+                          <option value="both">Header and footer</option>
+                          <option value="none">Hidden</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-bold text-slate-600">Footer Column</label>
+                        <select
+                          value={settings.page_terms_footer_column}
+                          onChange={(e) => setSettings({ ...settings, page_terms_footer_column: e.target.value })}
+                          className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+                        >
+                          <option value="legal">Bottom legal links</option>
+                          <option value="quick">Quick Links column</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border border-indigo-100 bg-white p-4">
+                    <h5 className="font-bold text-slate-800">Privacy Policy Link</h5>
+                    <p className="mb-3 mt-1 text-xs text-slate-500">Controls where the built-in /privacy-policy page appears.</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-xs font-bold text-slate-600">Placement</label>
+                        <select
+                          value={settings.page_privacy_placement}
+                          onChange={(e) => setSettings({ ...settings, page_privacy_placement: e.target.value })}
+                          className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+                        >
+                          <option value="footer">Footer only</option>
+                          <option value="header">Header only</option>
+                          <option value="both">Header and footer</option>
+                          <option value="none">Hidden</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-bold text-slate-600">Footer Column</label>
+                        <select
+                          value={settings.page_privacy_footer_column}
+                          onChange={(e) => setSettings({ ...settings, page_privacy_footer_column: e.target.value })}
+                          className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+                        >
+                          <option value="legal">Bottom legal links</option>
+                          <option value="quick">Quick Links column</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
