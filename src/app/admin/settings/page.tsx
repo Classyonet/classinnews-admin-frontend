@@ -287,7 +287,7 @@ function HtmlContentEditor({
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-      <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 p-3">
+      <div className="sticky top-0 z-20 flex flex-col gap-3 border-b border-slate-200 bg-slate-50 p-3 shadow-sm">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <label className="text-sm font-bold text-slate-700">{label}</label>
           <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
@@ -373,7 +373,7 @@ function HtmlContentEditor({
         </div>
       </div>
 
-      <div className="bg-white">
+      <div className="max-h-[65vh] overflow-y-auto bg-white">
         {mode === 'visual' && (
           <div
             ref={visualRef}
