@@ -1119,6 +1119,30 @@ export default function SystemSettingsPage() {
     page_privacy_footer_column: 'legal',
     footer_footnote: 'Classy News - Your trusted source for the latest updates and breaking news.',
     custom_pages: '[]',
+    // Frontend text settings
+    frontend_publisher_home_title: 'Classy News',
+    frontend_publisher_home_subtitle: 'The Publisher Dashboard for Classy News',
+    frontend_publisher_home_description: 'Classy News is a news application and website for reading the latest breaking news, politics, entertainment, sports, and lifestyle stories, and watching live TV and radio - all in one place. This dashboard allows publishers to create, manage, and publish news articles on the Classy News platform.',
+    frontend_publisher_home_cta_note: 'Ready to get started? Sign in to your account',
+    frontend_publisher_login_title: 'Classy News',
+    frontend_publisher_login_description: 'Classy News is a news application and website for reading the latest breaking news, politics, entertainment, sports, and lifestyle stories. This publisher dashboard allows you to create, manage, and publish news articles on the Classy News platform.',
+    frontend_publisher_login_features: 'Publish articles instantly\nTrack your analytics\nGrow your audience',
+    frontend_publisher_login_form_title: 'Welcome back',
+    frontend_publisher_login_form_subtitle: 'Sign in to your creator account',
+    frontend_publisher_register_title: 'ClassinNews',
+    frontend_publisher_register_description: 'Start your journey as a content creator and reach millions of readers.',
+    frontend_publisher_register_features: 'Publish articles instantly\nEarn from your content\nBuild your brand',
+    frontend_publisher_register_form_title: 'Create your account',
+    frontend_publisher_register_form_subtitle: 'Join ClassinNews as a publisher',
+    frontend_reader_login_title: 'Classy News',
+    frontend_reader_login_description: 'Your trusted source for quality news and insightful journalism.',
+    frontend_reader_auth_features: 'Personalized news feed\nSave and bookmark articles\nEngage with the community',
+    frontend_reader_login_form_title: 'Welcome back',
+    frontend_reader_login_form_subtitle: 'Sign in to your reader account',
+    frontend_reader_register_title: 'Classy News',
+    frontend_reader_register_description: 'Join thousands of readers who trust us for quality journalism.',
+    frontend_reader_register_form_title: 'Get started with Classy News',
+    frontend_reader_register_form_subtitle: 'Create your reader account',
   });
   const [customPageDraft, setCustomPageDraft] = useState<CustomPageEntry>(emptyCustomPage);
   const [editingCustomPageSlug, setEditingCustomPageSlug] = useState<string | null>(null);
@@ -1293,6 +1317,29 @@ export default function SystemSettingsPage() {
     page_privacy_footer_column: { type: 'string', category: 'pages' },
     footer_footnote: { type: 'string', category: 'pages' },
     custom_pages: { type: 'json', category: 'pages' },
+    frontend_publisher_home_title: { type: 'string', category: 'frontend_text' },
+    frontend_publisher_home_subtitle: { type: 'string', category: 'frontend_text' },
+    frontend_publisher_home_description: { type: 'string', category: 'frontend_text' },
+    frontend_publisher_home_cta_note: { type: 'string', category: 'frontend_text' },
+    frontend_publisher_login_title: { type: 'string', category: 'frontend_text' },
+    frontend_publisher_login_description: { type: 'string', category: 'frontend_text' },
+    frontend_publisher_login_features: { type: 'string', category: 'frontend_text' },
+    frontend_publisher_login_form_title: { type: 'string', category: 'frontend_text' },
+    frontend_publisher_login_form_subtitle: { type: 'string', category: 'frontend_text' },
+    frontend_publisher_register_title: { type: 'string', category: 'frontend_text' },
+    frontend_publisher_register_description: { type: 'string', category: 'frontend_text' },
+    frontend_publisher_register_features: { type: 'string', category: 'frontend_text' },
+    frontend_publisher_register_form_title: { type: 'string', category: 'frontend_text' },
+    frontend_publisher_register_form_subtitle: { type: 'string', category: 'frontend_text' },
+    frontend_reader_login_title: { type: 'string', category: 'frontend_text' },
+    frontend_reader_login_description: { type: 'string', category: 'frontend_text' },
+    frontend_reader_auth_features: { type: 'string', category: 'frontend_text' },
+    frontend_reader_login_form_title: { type: 'string', category: 'frontend_text' },
+    frontend_reader_login_form_subtitle: { type: 'string', category: 'frontend_text' },
+    frontend_reader_register_title: { type: 'string', category: 'frontend_text' },
+    frontend_reader_register_description: { type: 'string', category: 'frontend_text' },
+    frontend_reader_register_form_title: { type: 'string', category: 'frontend_text' },
+    frontend_reader_register_form_subtitle: { type: 'string', category: 'frontend_text' },
   };
 
   const customPages = parseCustomPagesSetting(settings.custom_pages);
@@ -1396,6 +1443,35 @@ export default function SystemSettingsPage() {
       setSavingSettings(false);
     }
   };
+
+  const updateTextSetting = (key: keyof typeof settings, value: string) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const renderFrontendTextField = (
+    key: keyof typeof settings,
+    label: string,
+    multiline = false
+  ) => (
+    <div>
+      <label className="block text-sm font-bold text-slate-700 mb-1">{label}</label>
+      {multiline ? (
+        <textarea
+          value={settings[key]}
+          onChange={(e) => updateTextSetting(key, e.target.value)}
+          rows={4}
+          className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-100"
+        />
+      ) : (
+        <Input
+          type="text"
+          value={settings[key]}
+          onChange={(e) => updateTextSetting(key, e.target.value)}
+          className="border-slate-200 focus:border-purple-500 focus:ring-purple-500"
+        />
+      )}
+    </div>
+  );
 
   const addWord = async () => {
     if (!newWord.trim()) {
@@ -1756,6 +1832,16 @@ export default function SystemSettingsPage() {
               }`}
             >
               Pages & Footer
+            </button>
+            <button
+              onClick={() => setSiteSubTab('frontend_text')}
+              className={`px-4 py-3 font-semibold text-sm transition-all duration-300 border-b-4 ${
+                siteSubTab === 'frontend_text'
+                  ? 'border-purple-600 text-purple-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Frontend Text
             </button>
           </div>
 
@@ -2240,6 +2326,69 @@ export default function SystemSettingsPage() {
                 <Button onClick={() => handleSaveSettings('pages')} disabled={savingSettings} className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-lg shadow-indigo-500/30 gap-2 disabled:opacity-60">
                   <Save className="w-4 h-4" />
                   Save Pages
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Frontend Text Sub-tab Content */}
+          {siteSubTab === 'frontend_text' && (
+            <div className="space-y-6">
+              <div className="rounded-xl border border-purple-100 bg-purple-50 p-4">
+                <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                  <Info className="w-5 h-5 text-purple-600" />
+                  Publisher and Reader Frontend Text
+                </h4>
+                <p className="mt-1 text-sm text-slate-600">
+                  These fields control public wording on the publisher homepage, publisher login/register pages, and reader login/register pages.
+                </p>
+              </div>
+
+              <div className="grid gap-6 xl:grid-cols-2">
+                <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
+                  <h4 className="font-bold text-slate-800">Publisher Homepage</h4>
+                  {renderFrontendTextField('frontend_publisher_home_title', 'Main Title')}
+                  {renderFrontendTextField('frontend_publisher_home_subtitle', 'Subtitle')}
+                  {renderFrontendTextField('frontend_publisher_home_description', 'Description', true)}
+                  {renderFrontendTextField('frontend_publisher_home_cta_note', 'Bottom Call-to-action Note')}
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
+                  <h4 className="font-bold text-slate-800">Publisher Login</h4>
+                  {renderFrontendTextField('frontend_publisher_login_title', 'Hero Title')}
+                  {renderFrontendTextField('frontend_publisher_login_description', 'Hero Description', true)}
+                  {renderFrontendTextField('frontend_publisher_login_features', 'Hero Feature Lines', true)}
+                  {renderFrontendTextField('frontend_publisher_login_form_title', 'Form Title')}
+                  {renderFrontendTextField('frontend_publisher_login_form_subtitle', 'Form Subtitle')}
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
+                  <h4 className="font-bold text-slate-800">Publisher Registration</h4>
+                  {renderFrontendTextField('frontend_publisher_register_title', 'Hero Title')}
+                  {renderFrontendTextField('frontend_publisher_register_description', 'Hero Description', true)}
+                  {renderFrontendTextField('frontend_publisher_register_features', 'Hero Feature Lines', true)}
+                  {renderFrontendTextField('frontend_publisher_register_form_title', 'Form Title')}
+                  {renderFrontendTextField('frontend_publisher_register_form_subtitle', 'Form Subtitle')}
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
+                  <h4 className="font-bold text-slate-800">Reader Login and Registration</h4>
+                  {renderFrontendTextField('frontend_reader_login_title', 'Login Hero Title')}
+                  {renderFrontendTextField('frontend_reader_login_description', 'Login Hero Description', true)}
+                  {renderFrontendTextField('frontend_reader_auth_features', 'Reader Feature Lines', true)}
+                  {renderFrontendTextField('frontend_reader_login_form_title', 'Login Form Title')}
+                  {renderFrontendTextField('frontend_reader_login_form_subtitle', 'Login Form Subtitle')}
+                  {renderFrontendTextField('frontend_reader_register_title', 'Register Hero Title')}
+                  {renderFrontendTextField('frontend_reader_register_description', 'Register Hero Description', true)}
+                  {renderFrontendTextField('frontend_reader_register_form_title', 'Register Form Title')}
+                  {renderFrontendTextField('frontend_reader_register_form_subtitle', 'Register Form Subtitle')}
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <Button onClick={() => handleSaveSettings('frontend_text')} disabled={savingSettings} className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg shadow-purple-500/30 gap-2 disabled:opacity-60">
+                  <Save className="w-4 h-4" />
+                  Save Frontend Text
                 </Button>
               </div>
             </div>
