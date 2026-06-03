@@ -21,7 +21,10 @@ import {
   Shield, 
   Search,
   Plus,
+  Pencil,
   Trash2,
+  ChevronDown,
+  ChevronUp,
   Check,
   X,
   AlertTriangle,
@@ -216,6 +219,7 @@ function HtmlContentEditor({
   const visualRef = useRef<HTMLDivElement | null>(null);
   const [mode, setMode] = useState<'visual' | 'html' | 'preview'>('visual');
   const [isVisualFocused, setIsVisualFocused] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     if (mode !== 'visual' || isVisualFocused || !visualRef.current) {
@@ -290,90 +294,104 @@ function HtmlContentEditor({
       <div className="sticky top-0 z-20 flex flex-col gap-3 border-b border-slate-200 bg-slate-50 p-3 shadow-sm">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <label className="text-sm font-bold text-slate-700">{label}</label>
-          <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
-            {[
-              { key: 'visual', text: 'Visual' },
-              { key: 'html', text: 'HTML' },
-              { key: 'preview', text: 'Preview' },
-            ].map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => setMode(item.key as 'visual' | 'html' | 'preview')}
-                className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
-                  mode === item.key
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                {item.text}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
+              {[
+                { key: 'visual', text: 'Visual' },
+                { key: 'html', text: 'HTML' },
+                { key: 'preview', text: 'Preview' },
+              ].map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setMode(item.key as 'visual' | 'html' | 'preview')}
+                  className={`rounded-md px-3 py-1.5 text-xs font-bold transition ${
+                    mode === item.key
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  {item.text}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsCollapsed((current) => !current)}
+              title={isCollapsed ? 'Expand editor' : 'Collapse editor'}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 hover:border-indigo-300 hover:text-indigo-700"
+            >
+              {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+              {isCollapsed ? 'Expand' : 'Collapse'}
+            </button>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {mode === 'html' ? (
-            [
-              { icon: Heading1, label: 'Heading 1', before: '<h1>', after: '</h1>' },
-              { icon: Heading2, label: 'Heading 2', before: '<h2>', after: '</h2>' },
-              { icon: Pilcrow, label: 'Paragraph', before: '<p>', after: '</p>' },
-              { icon: Bold, label: 'Bold', before: '<strong>', after: '</strong>' },
-              { icon: Italic, label: 'Italic', before: '<em>', after: '</em>' },
-              { icon: List, label: 'Bulleted list', before: '<ul>\n<li>', after: '</li>\n</ul>' },
-              { icon: Link2, label: 'Link', before: '<a href="https://">', after: '</a>' },
-            ].map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={() => insertSnippet(item.before, item.after)}
-                  title={item.label}
-                  className="rounded-md border border-slate-200 bg-white p-2 text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
-                >
-                  <Icon className="h-4 w-4" />
-                </button>
-              );
-            })
-          ) : (
-            [
-              { icon: Heading1, label: 'Heading 1', action: () => runVisualCommand('formatBlock', 'h1') },
-              { icon: Heading2, label: 'Heading 2', action: () => runVisualCommand('formatBlock', 'h2') },
-              { icon: Pilcrow, label: 'Paragraph', action: () => runVisualCommand('formatBlock', 'p') },
-              { icon: Bold, label: 'Bold', action: () => runVisualCommand('bold') },
-              { icon: Italic, label: 'Italic', action: () => runVisualCommand('italic') },
-              { icon: List, label: 'Bulleted list', action: () => runVisualCommand('insertUnorderedList') },
-              { icon: ListOrdered, label: 'Numbered list', action: () => runVisualCommand('insertOrderedList') },
-              { icon: Link2, label: 'Link', action: addVisualLink },
-            ].map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={item.action}
-                  title={item.label}
-                  className="rounded-md border border-slate-200 bg-white p-2 text-slate-700 hover:border-indigo-300 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={mode === 'preview'}
-                >
-                  <Icon className="h-4 w-4" />
-                </button>
-              );
-            })
-          )}
-          <button
-            type="button"
-            onClick={formatCurrentContent}
-            className="inline-flex items-center gap-2 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100"
-          >
-            <Sparkles className="h-4 w-4" />
-            Auto format
-          </button>
-        </div>
+        {!isCollapsed && (
+          <div className="flex flex-wrap gap-2">
+            {mode === 'html' ? (
+              [
+                { icon: Heading1, label: 'Heading 1', before: '<h1>', after: '</h1>' },
+                { icon: Heading2, label: 'Heading 2', before: '<h2>', after: '</h2>' },
+                { icon: Pilcrow, label: 'Paragraph', before: '<p>', after: '</p>' },
+                { icon: Bold, label: 'Bold', before: '<strong>', after: '</strong>' },
+                { icon: Italic, label: 'Italic', before: '<em>', after: '</em>' },
+                { icon: List, label: 'Bulleted list', before: '<ul>\n<li>', after: '</li>\n</ul>' },
+                { icon: Link2, label: 'Link', before: '<a href="https://">', after: '</a>' },
+              ].map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => insertSnippet(item.before, item.after)}
+                    title={item.label}
+                    className="rounded-md border border-slate-200 bg-white p-2 text-slate-700 hover:border-indigo-300 hover:text-indigo-700"
+                  >
+                    <Icon className="h-4 w-4" />
+                  </button>
+                );
+              })
+            ) : (
+              [
+                { icon: Heading1, label: 'Heading 1', action: () => runVisualCommand('formatBlock', 'h1') },
+                { icon: Heading2, label: 'Heading 2', action: () => runVisualCommand('formatBlock', 'h2') },
+                { icon: Pilcrow, label: 'Paragraph', action: () => runVisualCommand('formatBlock', 'p') },
+                { icon: Bold, label: 'Bold', action: () => runVisualCommand('bold') },
+                { icon: Italic, label: 'Italic', action: () => runVisualCommand('italic') },
+                { icon: List, label: 'Bulleted list', action: () => runVisualCommand('insertUnorderedList') },
+                { icon: ListOrdered, label: 'Numbered list', action: () => runVisualCommand('insertOrderedList') },
+                { icon: Link2, label: 'Link', action: addVisualLink },
+              ].map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={item.action}
+                    title={item.label}
+                    className="rounded-md border border-slate-200 bg-white p-2 text-slate-700 hover:border-indigo-300 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={mode === 'preview'}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </button>
+                );
+              })
+            )}
+            <button
+              type="button"
+              onClick={formatCurrentContent}
+              className="inline-flex items-center gap-2 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100"
+            >
+              <Sparkles className="h-4 w-4" />
+              Auto format
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="max-h-[65vh] overflow-y-auto bg-white">
+      {!isCollapsed && <div className="max-h-[65vh] overflow-y-auto bg-white">
         {mode === 'visual' && (
           <div
             ref={visualRef}
@@ -417,7 +435,7 @@ function HtmlContentEditor({
             />
           </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 }
@@ -1103,6 +1121,7 @@ export default function SystemSettingsPage() {
     custom_pages: '[]',
   });
   const [customPageDraft, setCustomPageDraft] = useState<CustomPageEntry>(emptyCustomPage);
+  const [editingCustomPageSlug, setEditingCustomPageSlug] = useState<string | null>(null);
 
   // Prohibited Words state
   const [words, setWords] = useState<ProhibitedWord[]>([]);
@@ -1282,23 +1301,50 @@ export default function SystemSettingsPage() {
     setSettings({ ...settings, custom_pages: JSON.stringify(pages, null, 2) });
   };
 
-  const addCustomPage = () => {
+  const saveCustomPageDraft = () => {
     const title = customPageDraft.title.trim();
     const slug = (customPageDraft.slug.trim() || slugifyPageTitle(title)).replace(/^\/+|\/+$/g, '');
     if (!title || !slug || !customPageDraft.content.trim()) {
       alert('Custom page title, slug, and content are required.');
       return;
     }
-    if (customPages.some((page) => page.slug === slug)) {
+    if (customPages.some((page) => page.slug === slug && page.slug !== editingCustomPageSlug)) {
       alert('A custom page with this slug already exists.');
       return;
     }
-    saveCustomPagesToState([...customPages, { ...customPageDraft, title, slug }]);
+
+    const nextPage = { ...customPageDraft, title, slug };
+    const nextPages = editingCustomPageSlug
+      ? customPages.map((page) => page.slug === editingCustomPageSlug ? nextPage : page)
+      : [...customPages, nextPage];
+
+    saveCustomPagesToState(nextPages);
     setCustomPageDraft(emptyCustomPage);
+    setEditingCustomPageSlug(null);
+  };
+
+  const startEditingCustomPage = (page: CustomPageEntry) => {
+    setCustomPageDraft({
+      title: page.title || '',
+      slug: page.slug || '',
+      content: page.content || '',
+      placement: page.placement || 'footer',
+      footerColumn: page.footerColumn || 'legal',
+      isActive: page.isActive !== false,
+    });
+    setEditingCustomPageSlug(page.slug);
+  };
+
+  const cancelEditingCustomPage = () => {
+    setCustomPageDraft(emptyCustomPage);
+    setEditingCustomPageSlug(null);
   };
 
   const removeCustomPage = (slug: string) => {
     saveCustomPagesToState(customPages.filter((page) => page.slug !== slug));
+    if (editingCustomPageSlug === slug) {
+      cancelEditingCustomPage();
+    }
   };
 
   const updateCustomPage = (slug: string, patch: Partial<CustomPageEntry>) => {
@@ -2048,7 +2094,7 @@ export default function SystemSettingsPage() {
               <div className="p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 space-y-4">
                 <h4 className="font-bold text-slate-800 flex items-center gap-2">
                   <FileText className="w-5 h-5 text-indigo-600" />
-                  Footer & Global Text
+                  Footer Text
                 </h4>
                 
                 <div>
@@ -2062,110 +2108,25 @@ export default function SystemSettingsPage() {
                   />
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-lg border border-indigo-100 bg-white p-4">
-                    <h5 className="font-bold text-slate-800">Terms and Conditions Link</h5>
-                    <p className="mb-3 mt-1 text-xs text-slate-500">Controls where the built-in /terms page appears.</p>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <label className="mb-1 block text-xs font-bold text-slate-600">Placement</label>
-                        <select
-                          value={settings.page_terms_placement}
-                          onChange={(e) => setSettings({ ...settings, page_terms_placement: e.target.value })}
-                          className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
-                        >
-                          <option value="footer">Footer only</option>
-                          <option value="header">Header only</option>
-                          <option value="both">Header and footer</option>
-                          <option value="none">Hidden</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs font-bold text-slate-600">Footer Column</label>
-                        <select
-                          value={settings.page_terms_footer_column}
-                          onChange={(e) => setSettings({ ...settings, page_terms_footer_column: e.target.value })}
-                          className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
-                        >
-                          <option value="legal">Bottom legal links</option>
-                          <option value="quick">Quick Links column</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-lg border border-indigo-100 bg-white p-4">
-                    <h5 className="font-bold text-slate-800">Privacy Policy Link</h5>
-                    <p className="mb-3 mt-1 text-xs text-slate-500">Controls where the built-in /privacy-policy page appears.</p>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <label className="mb-1 block text-xs font-bold text-slate-600">Placement</label>
-                        <select
-                          value={settings.page_privacy_placement}
-                          onChange={(e) => setSettings({ ...settings, page_privacy_placement: e.target.value })}
-                          className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
-                        >
-                          <option value="footer">Footer only</option>
-                          <option value="header">Header only</option>
-                          <option value="both">Header and footer</option>
-                          <option value="none">Hidden</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs font-bold text-slate-600">Footer Column</label>
-                        <select
-                          value={settings.page_privacy_footer_column}
-                          onChange={(e) => setSettings({ ...settings, page_privacy_footer_column: e.target.value })}
-                          className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
-                        >
-                          <option value="legal">Bottom legal links</option>
-                          <option value="quick">Quick Links column</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <p className="text-xs text-slate-500">
+                  Built-in default Terms/Privacy pages are deprecated. Manage all legal links using Custom Pages below.
+                </p>
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-bold text-slate-800">Static Pages Content</h4>
-                <p className="text-sm text-slate-600 mb-4">Use the editor buttons for common formatting, then check the preview before saving.</p>
-
-                <HtmlContentEditor
-                  label="About Us Page Content"
-                  value={settings.page_about}
-                  onChange={(page_about) => setSettings({ ...settings, page_about })}
-                  placeholder="<h1>About Classy News</h1><p>We are...</p>"
-                />
-
-                <HtmlContentEditor
-                  label="Contact Us Page Content"
-                  value={settings.page_contact}
-                  onChange={(page_contact) => setSettings({ ...settings, page_contact })}
-                  placeholder="<h1>Contact Us</h1><p>Email us at...</p>"
-                />
-
-                <HtmlContentEditor
-                  label="Terms and Conditions Page Content"
-                  value={settings.page_terms_conditions}
-                  onChange={(page_terms_conditions) => setSettings({ ...settings, page_terms_conditions })}
-                  placeholder="<h1>Terms and Conditions</h1><p>Your full terms...</p>"
-                />
-
-                <HtmlContentEditor
-                  label="Privacy Policy Page Content"
-                  value={settings.page_privacy_policy}
-                  onChange={(page_privacy_policy) => setSettings({ ...settings, page_privacy_policy })}
-                  placeholder="<h1>Privacy Policy</h1><p>Your privacy...</p>"
-                />
-
                 <div className="rounded-xl border border-slate-200 bg-white p-4">
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
                       <h4 className="font-bold text-slate-800">Custom Pages</h4>
-                      <p className="text-sm text-slate-500">Create extra pages and choose whether they appear in the header, footer, both, or nowhere.</p>
+                      <p className="text-sm text-slate-500">Create About, Contact, Terms, Privacy, and any extra pages here, then choose whether they appear in the header, footer, both, or nowhere.</p>
                     </div>
                   </div>
+
+                  {editingCustomPageSlug && (
+                    <div className="mb-4 rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-800">
+                      Editing /site-pages/{editingCustomPageSlug}
+                    </div>
+                  )}
 
                   <div className="grid gap-3 md:grid-cols-2">
                     <div>
@@ -2226,10 +2187,19 @@ export default function SystemSettingsPage() {
                     </div>
                   </div>
 
-                  <Button type="button" onClick={addCustomPage} className="mt-4 gap-2 bg-indigo-600 hover:bg-indigo-700">
-                    <Plus className="h-4 w-4" />
-                    Add Custom Page
-                  </Button>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <Button type="button" onClick={saveCustomPageDraft} className="gap-2 bg-indigo-600 hover:bg-indigo-700">
+                      {editingCustomPageSlug ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                      {editingCustomPageSlug ? 'Update Custom Page' : 'Add Custom Page'}
+                    </Button>
+
+                    {editingCustomPageSlug && (
+                      <Button type="button" variant="outline" onClick={cancelEditingCustomPage} className="gap-2">
+                        <X className="h-4 w-4" />
+                        Cancel Edit
+                      </Button>
+                    )}
+                  </div>
 
                   <div className="mt-5 space-y-3">
                     {customPages.length === 0 ? (
@@ -2239,7 +2209,7 @@ export default function SystemSettingsPage() {
                         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                           <div>
                             <div className="font-semibold text-slate-900">{page.title}</div>
-                            <div className="text-xs text-slate-500">/pages/{page.slug} - {page.placement} - {page.footerColumn}</div>
+                            <div className="text-xs text-slate-500">/site-pages/{page.slug} - {page.placement} - {page.footerColumn}</div>
                           </div>
                           <div className="flex items-center gap-3">
                             <label className="flex items-center gap-2 text-sm text-slate-600">
@@ -2250,6 +2220,10 @@ export default function SystemSettingsPage() {
                               />
                               Active
                             </label>
+                            <Button type="button" variant="outline" onClick={() => startEditingCustomPage(page)} className="gap-2">
+                              <Pencil className="h-4 w-4" />
+                              Edit
+                            </Button>
                             <Button type="button" variant="outline" onClick={() => removeCustomPage(page.slug)} className="gap-2 text-red-600">
                               <Trash2 className="h-4 w-4" />
                               Remove
