@@ -353,6 +353,50 @@ export default function WithdrawalsPage() {
     }
   }
 
+  const getPaymentCountdown = (withdrawal: WithdrawalRequest) => {
+    const paymentWindowDays = 7
+    const requestTime = new Date(withdrawal.requestDate).getTime()
+    const dueTime = requestTime + paymentWindowDays * 24 * 60 * 60 * 1000
+    const now = Date.now()
+    const elapsedDays = Math.max(0, (now - requestTime) / (24 * 60 * 60 * 1000))
+    const remainingDays = Math.max(0, Math.ceil((dueTime - now) / (24 * 60 * 60 * 1000)))
+    const progress = Math.min(100, Math.max(0, (elapsedDays / paymentWindowDays) * 100))
+
+    if (withdrawal.status === 'completed') return { label: 'Completed', progress: 100, tone: 'emerald' }
+    if (withdrawal.status === 'paid') return { label: 'Payment sent', progress: 100, tone: 'cyan' }
+    if (withdrawal.status === 'rejected') return { label: 'Rejected', progress: 0, tone: 'rose' }
+    if (remainingDays === 0) return { label: 'Due now', progress: 100, tone: 'amber' }
+
+    return {
+      label: `${remainingDays} day${remainingDays === 1 ? '' : 's'} left`,
+      progress,
+      tone: 'green'
+    }
+  }
+
+  const CountdownTracker = ({ withdrawal }: { withdrawal: WithdrawalRequest }) => {
+    const countdown = getPaymentCountdown(withdrawal)
+    const barClass = {
+      green: 'bg-green-500',
+      amber: 'bg-amber-500',
+      cyan: 'bg-cyan-500',
+      emerald: 'bg-emerald-500',
+      rose: 'bg-rose-500',
+    }[countdown.tone]
+
+    return (
+      <div className="min-w-[150px]">
+        <div className="mb-1 flex items-center justify-between gap-2 text-xs">
+          <span className="font-semibold text-slate-700">{countdown.label}</span>
+          <span className="text-slate-400">5-7 days</span>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+          <div className={`h-full rounded-full ${barClass}`} style={{ width: `${countdown.progress}%` }} />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -488,6 +532,7 @@ export default function WithdrawalsPage() {
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Publisher</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Payment Identity</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Amount</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Payment Countdown</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Reference</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Request Date</th>
@@ -518,6 +563,9 @@ export default function WithdrawalsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-lg font-bold text-green-600">GHC {withdrawal.amount.toFixed(2)}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <CountdownTracker withdrawal={withdrawal} />
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-600">
                       {withdrawal.transactionReference || '-'}
