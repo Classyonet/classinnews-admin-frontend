@@ -31,12 +31,17 @@ interface WithdrawalRequest {
   accountNumber?: string
   bankName?: string
   amount: number
-  status: 'pending' | 'approved' | 'rejected' | 'completed'
+  status: 'pending' | 'under_review' | 'approved' | 'paid' | 'rejected' | 'completed'
   requestDate: string
   processedDate?: string
   processedBy?: string
   adminNotes?: string
   paymentDetails?: any
+  transactionReference?: string
+  commissionRate?: number
+  commissionAmount?: number
+  netAmount?: number
+  tierAtWithdrawal?: string
 }
 
 interface PaymentDetails {
@@ -53,11 +58,28 @@ interface PaymentDetails {
 interface Stats {
   total: number
   pending: number
+  underReview: number
   approved: number
+  paid: number
   rejected: number
   completed: number
   pendingAmount: number
+  underReviewAmount: number
+  approvedAmount: number
+  paidAmount: number
   completedAmount: number
+  financialOverview?: FinancialOverview
+}
+
+interface FinancialOverview {
+  totalPublisherEarnings: number
+  availableForWithdrawal: number
+  pendingWithdrawals: number
+  approvedNotYetPaid: number
+  completedWithdrawals: number
+  platformLiability: number
+  activeReserved: number
+  rejectedWithdrawals: number
 }
 
 export default function WithdrawalsPage() {
@@ -73,6 +95,7 @@ export default function WithdrawalsPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [notes, setNotes] = useState('')
+  const [transactionReference, setTransactionReference] = useState('')
 
   useEffect(() => {
     fetchStats()
@@ -140,6 +163,7 @@ export default function WithdrawalsPage() {
         setPaymentDetails(apiPayment || fallbackPayment)
         setShowDetailsModal(true)
         setNotes('')
+        setTransactionReference(data.data.withdrawal?.transactionReference || '')
       }
     } catch (error) {
       console.error('Error fetching withdrawal details:', error)
@@ -176,6 +200,36 @@ export default function WithdrawalsPage() {
     } catch (error) {
       console.error('Error approving withdrawal:', error)
       alert('Failed to approve withdrawal')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const markUnderReview = async () => {
+    if (!selectedWithdrawal) return
+
+    setProcessing(true)
+    try {
+      const response = await adminApiFetch(`${API_URL}/api/withdrawals/${selectedWithdrawal.id}/under-review`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ notes })
+      }, token)
+
+      const data = await response.json()
+      if (data.success) {
+        alert('Withdrawal marked under review')
+        setShowDetailsModal(false)
+        fetchWithdrawals()
+        fetchStats()
+      } else {
+        alert(`Failed: ${data.message}`)
+      }
+    } catch (error) {
+      console.error('Error marking withdrawal under review:', error)
+      alert('Failed to mark withdrawal under review')
     } finally {
       setProcessing(false)
     }
@@ -224,7 +278,7 @@ export default function WithdrawalsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ notes: 'Payment completed' })
+        body: JSON.stringify({ notes: notes || 'Payment completed', transactionReference })
       }, token)
       
       const data = await response.json()
@@ -241,10 +295,46 @@ export default function WithdrawalsPage() {
     }
   }
 
+  const markPaid = async () => {
+    if (!selectedWithdrawal) return
+    if (!transactionReference.trim()) {
+      alert('Please enter the Mobile Money transaction reference before marking as paid.')
+      return
+    }
+
+    setProcessing(true)
+    try {
+      const response = await adminApiFetch(`${API_URL}/api/withdrawals/${selectedWithdrawal.id}/paid`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ notes: notes || 'Payment sent', transactionReference })
+      }, token)
+
+      const data = await response.json()
+      if (data.success) {
+        alert('Withdrawal marked as paid')
+        setShowDetailsModal(false)
+        fetchWithdrawals()
+        fetchStats()
+      } else {
+        alert(`Failed: ${data.message}`)
+      }
+    } catch (error) {
+      console.error('Error marking withdrawal as paid:', error)
+      alert('Failed to mark withdrawal as paid')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-700'
+      case 'under_review': return 'bg-indigo-100 text-indigo-700'
       case 'approved': return 'bg-blue-100 text-blue-700'
+      case 'paid': return 'bg-cyan-100 text-cyan-700'
       case 'rejected': return 'bg-red-100 text-red-700'
       case 'completed': return 'bg-green-100 text-green-700'
       default: return 'bg-gray-100 text-gray-700'
@@ -254,7 +344,9 @@ export default function WithdrawalsPage() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending': return <Clock className="w-4 h-4" />
+      case 'under_review': return <Eye className="w-4 h-4" />
       case 'approved': return <CheckCircle className="w-4 h-4" />
+      case 'paid': return <CreditCard className="w-4 h-4" />
       case 'rejected': return <XCircle className="w-4 h-4" />
       case 'completed': return <CheckCircle className="w-4 h-4" />
       default: return <AlertCircle className="w-4 h-4" />
@@ -273,7 +365,7 @@ export default function WithdrawalsPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
           <div className="p-6 rounded-xl bg-gradient-to-br from-yellow-50 to-amber-50 border border-yellow-200">
             <div className="flex items-center justify-between mb-2">
               <Clock className="w-8 h-8 text-yellow-600" />
@@ -284,12 +376,31 @@ export default function WithdrawalsPage() {
             <p className="text-xs text-yellow-700 font-semibold mt-1">GHC {stats.pendingAmount.toFixed(2)}</p>
           </div>
 
+          <div className="p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-200">
+            <div className="flex items-center justify-between mb-2">
+              <Eye className="w-8 h-8 text-indigo-600" />
+            </div>
+            <p className="text-2xl font-bold text-slate-900">{stats.underReview || 0}</p>
+            <p className="text-sm text-slate-600">Under Review</p>
+            <p className="text-xs text-indigo-700 font-semibold mt-1">GHC {(stats.underReviewAmount || 0).toFixed(2)}</p>
+          </div>
+
           <div className="p-6 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200">
             <div className="flex items-center justify-between mb-2">
               <CheckCircle className="w-8 h-8 text-blue-600" />
             </div>
             <p className="text-2xl font-bold text-slate-900">{stats.approved}</p>
             <p className="text-sm text-slate-600">Approved</p>
+            <p className="text-xs text-blue-700 font-semibold mt-1">GHC {(stats.approvedAmount || 0).toFixed(2)}</p>
+          </div>
+
+          <div className="p-6 rounded-xl bg-gradient-to-br from-cyan-50 to-sky-50 border border-cyan-200">
+            <div className="flex items-center justify-between mb-2">
+              <CreditCard className="w-8 h-8 text-cyan-600" />
+            </div>
+            <p className="text-2xl font-bold text-slate-900">{stats.paid || 0}</p>
+            <p className="text-sm text-slate-600">Paid</p>
+            <p className="text-xs text-cyan-700 font-semibold mt-1">GHC {(stats.paidAmount || 0).toFixed(2)}</p>
           </div>
 
           <div className="p-6 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200">
@@ -311,9 +422,33 @@ export default function WithdrawalsPage() {
         </div>
       )}
 
+      {stats?.financialOverview && (
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-slate-900">Financial Overview</h2>
+            <p className="text-sm text-slate-600">Publisher earnings, active obligations, and platform liability</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-3">
+            {[
+              ['Total Publisher Earnings', stats.financialOverview.totalPublisherEarnings],
+              ['Available For Withdrawal', stats.financialOverview.availableForWithdrawal],
+              ['Pending Withdrawals', stats.financialOverview.pendingWithdrawals],
+              ['Approved Not Yet Paid', stats.financialOverview.approvedNotYetPaid],
+              ['Completed Withdrawals', stats.financialOverview.completedWithdrawals],
+              ['Platform Liability', stats.financialOverview.platformLiability],
+            ].map(([label, value]) => (
+              <div key={label as string} className="rounded-lg border border-slate-100 bg-slate-50 p-4">
+                <p className="text-xs font-semibold uppercase text-slate-500">{label}</p>
+                <p className="mt-2 text-lg font-bold text-slate-900">GHC {Number(value).toFixed(2)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Filter Buttons */}
       <div className="flex gap-2 flex-wrap">
-        {['all', 'pending', 'approved', 'completed', 'rejected'].map((status) => (
+        {['all', 'pending', 'under_review', 'approved', 'paid', 'completed', 'rejected'].map((status) => (
           <button
             key={status}
             onClick={() => setFilterStatus(status)}
@@ -323,7 +458,7 @@ export default function WithdrawalsPage() {
                 : 'bg-white text-slate-700 border border-slate-200 hover:border-green-300'
             }`}
           >
-            {status.charAt(0).toUpperCase() + status.slice(1)}
+            {status.replace('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase())}
           </button>
         ))}
       </div>
@@ -353,6 +488,7 @@ export default function WithdrawalsPage() {
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Publisher</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Payment Identity</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Amount</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Reference</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Request Date</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Actions</th>
@@ -383,10 +519,13 @@ export default function WithdrawalsPage() {
                     <td className="px-4 py-3">
                       <span className="text-lg font-bold text-green-600">GHC {withdrawal.amount.toFixed(2)}</span>
                     </td>
+                    <td className="px-4 py-3 text-xs text-slate-600">
+                      {withdrawal.transactionReference || '-'}
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(withdrawal.status)}`}>
                         {getStatusIcon(withdrawal.status)}
-                        {withdrawal.status.toUpperCase()}
+                        {withdrawal.status.replace('_', ' ').toUpperCase()}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600">
@@ -465,8 +604,24 @@ export default function WithdrawalsPage() {
                   <div>
                     <p className="text-slate-600">Status:</p>
                     <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(selectedWithdrawal.status)}`}>
-                      {selectedWithdrawal.status.toUpperCase()}
+                      {selectedWithdrawal.status.replace('_', ' ').toUpperCase()}
                     </span>
+                  </div>
+                  <div>
+                    <p className="text-slate-600">Commission Rate:</p>
+                    <p className="font-semibold">{selectedWithdrawal.commissionRate ?? 0}%</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-600">Commission Fee:</p>
+                    <p className="font-semibold">GHC {(selectedWithdrawal.commissionAmount ?? 0).toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-600">Final Publisher Receives:</p>
+                    <p className="font-semibold text-emerald-700">GHC {(selectedWithdrawal.netAmount ?? selectedWithdrawal.amount).toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-600">Transaction Reference:</p>
+                    <p className="font-semibold">{selectedWithdrawal.transactionReference || '-'}</p>
                   </div>
                   <div>
                     <p className="text-slate-600">Request Date:</p>
@@ -525,10 +680,10 @@ export default function WithdrawalsPage() {
               </div>
 
               {/* Admin Notes */}
-              {selectedWithdrawal.status === 'pending' && (
+              {['pending', 'under_review', 'approved', 'paid'].includes(selectedWithdrawal.status) && (
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Admin Notes {selectedWithdrawal.status === 'pending' && '(Required for rejection)'}
+                    Admin Notes {['pending', 'under_review'].includes(selectedWithdrawal.status) && '(Required for rejection)'}
                   </label>
                   <textarea
                     value={notes}
@@ -536,6 +691,21 @@ export default function WithdrawalsPage() {
                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     rows={3}
                     placeholder="Add notes about this withdrawal..."
+                  />
+                </div>
+              )}
+
+              {['approved', 'paid'].includes(selectedWithdrawal.status) && (
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Mobile Money Transaction Reference {selectedWithdrawal.status === 'approved' && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    type="text"
+                    value={transactionReference}
+                    onChange={(e) => setTransactionReference(e.target.value)}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Enter MoMo transaction/reference ID"
                   />
                 </div>
               )}
@@ -548,15 +718,40 @@ export default function WithdrawalsPage() {
               )}
 
               {/* Action Buttons */}
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 {selectedWithdrawal.status === 'pending' && (
+                  <>
+                    <button
+                      onClick={markUnderReview}
+                      disabled={processing}
+                      className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-lg hover:from-indigo-600 hover:to-violet-600 font-bold disabled:opacity-50"
+                    >
+                      {processing ? 'Processing...' : 'Mark Under Review'}
+                    </button>
+                    <button
+                      onClick={approveWithdrawal}
+                      disabled={processing || !paymentDetails?.isComplete}
+                      className="flex-1 px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {processing ? 'Processing...' : paymentDetails?.isComplete ? 'Approve' : 'Cannot Approve'}
+                    </button>
+                    <button
+                      onClick={rejectWithdrawal}
+                      disabled={processing}
+                      className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-lg hover:from-red-600 hover:to-rose-600 font-bold disabled:opacity-50"
+                    >
+                      {processing ? 'Processing...' : 'Reject Request'}
+                    </button>
+                  </>
+                )}
+                {selectedWithdrawal.status === 'under_review' && (
                   <>
                     <button
                       onClick={approveWithdrawal}
                       disabled={processing || !paymentDetails?.isComplete}
                       className="flex-1 px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {processing ? 'Processing...' : paymentDetails?.isComplete ? '✓ Approve for Payment' : '✗ Cannot Approve (Incomplete Details)'}
+                      {processing ? 'Processing...' : paymentDetails?.isComplete ? 'Approve' : 'Cannot Approve'}
                     </button>
                     <button
                       onClick={rejectWithdrawal}
@@ -569,11 +764,20 @@ export default function WithdrawalsPage() {
                 )}
                 {selectedWithdrawal.status === 'approved' && (
                   <button
+                    onClick={markPaid}
+                    disabled={processing}
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-cyan-500 to-sky-500 text-white rounded-lg hover:from-cyan-600 hover:to-sky-600 font-bold disabled:opacity-50"
+                  >
+                    {processing ? 'Processing...' : 'Mark Paid'}
+                  </button>
+                )}
+                {selectedWithdrawal.status === 'paid' && (
+                  <button
                     onClick={completeWithdrawal}
                     disabled={processing}
                     className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 font-bold disabled:opacity-50"
                   >
-                    {processing ? 'Processing...' : '✓ Mark as Paid/Completed'}
+                    {processing ? 'Processing...' : 'Mark Completed'}
                   </button>
                 )}
                 <button
