@@ -18,6 +18,7 @@ import {
   TrendingUp,
   DollarSign,
   Image,
+  Bot,
 } from 'lucide-react';
 
 const navigation = [
@@ -27,6 +28,7 @@ const navigation = [
   { name: 'Administrators', href: '/admin/administrators', icon: Shield, notificationKey: 'administrators' },
   { name: 'Articles', href: '/admin/articles', icon: FileText, notificationKey: 'articles' },
   { name: 'Moderation', href: '/admin/moderation', icon: Shield, notificationKey: 'moderation', showBadge: true },
+  { name: 'AI News Center', href: '/admin/ai-news', icon: Bot, notificationKey: 'ai-news' },
   { name: 'Withdrawals', href: '/admin/withdrawals', icon: DollarSign, notificationKey: 'withdrawals', showBadge: true },
   { name: 'Trending Topics', href: '/admin/trending-topics', icon: TrendingUp, notificationKey: 'trending' },
   { name: 'Analytics', href: '/admin/analytics', icon: BarChart3, notificationKey: 'analytics' },
@@ -171,3 +173,4 @@ export default function AdminSidebar() {
     </div>
   );
 }
+
