@@ -11,6 +11,7 @@ import {
   Bot,
   CheckCircle2,
   Clock,
+  Edit2,
   FileText,
   Play,
   Plus,
@@ -19,6 +20,7 @@ import {
   Send,
   Settings,
   Sparkles,
+  Trash2,
   XCircle,
 } from 'lucide-react';
 
@@ -124,12 +126,21 @@ async function apiRequest<T>(path: string, init: RequestInit = {}, token?: strin
   if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
 
   const response = await adminApiFetch(path, { ...init, headers }, token);
+  if (init.method === 'DELETE') {
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error((data as any).message || 'Request failed');
+    }
+    return undefined as unknown as T;
+  }
   const data = await response.json();
   if (!response.ok || data.success === false) {
     throw new Error(data.message || 'Request failed');
   }
   return data.data as T;
 }
+
+const EMPTY_EDIT = { name: '', url: '', defaultCategory: 'World News', trustLevel: '3', isActive: true };
 
 export default function AiNewsCenterPage() {
   const { token } = useAuth();
@@ -144,6 +155,10 @@ export default function AiNewsCenterPage() {
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [sourceForm, setSourceForm] = useState({ name: '', url: '', defaultCategory: 'World News', trustLevel: '3' });
   const [settingsDraft, setSettingsDraft] = useState<Record<string, string>>({});
+
+  // Source inline edit state
+  const [editingSourceId, setEditingSourceId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{ name: string; url: string; defaultCategory: string; trustLevel: string; isActive: boolean }>(EMPTY_EDIT);
 
   const settingMap = useMemo(() => {
     return settings.reduce<Record<string, AiSetting>>((acc, setting) => {
@@ -214,6 +229,64 @@ export default function AiNewsCenterPage() {
       }, token);
       setSourceForm({ name: '', url: '', defaultCategory: 'World News', trustLevel: '3' });
       toast.success('Source added');
+    });
+  }
+
+  function startEditSource(source: Source) {
+    setEditingSourceId(source.id);
+    setEditForm({
+      name: source.name,
+      url: source.url,
+      defaultCategory: source.defaultCategory || 'World News',
+      trustLevel: String(source.trustLevel),
+      isActive: source.isActive,
+    });
+  }
+
+  function cancelEditSource() {
+    setEditingSourceId(null);
+    setEditForm(EMPTY_EDIT);
+  }
+
+  async function saveEditSource(id: string) {
+    await runAction(`edit-source-${id}`, async () => {
+      await apiRequest(`/api/ai-news/sources/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          name: editForm.name,
+          url: editForm.url,
+          defaultCategory: editForm.defaultCategory,
+          trustLevel: Number(editForm.trustLevel) || 3,
+          isActive: editForm.isActive,
+        }),
+      }, token);
+      setEditingSourceId(null);
+      setEditForm(EMPTY_EDIT);
+      toast.success('Source updated');
+    });
+  }
+
+  async function deleteSource(id: string) {
+    if (!confirm('Delete this source? Discovered stories from it will remain.')) return;
+    await runAction(`del-source-${id}`, async () => {
+      await apiRequest(`/api/ai-news/sources/${id}`, { method: 'DELETE' }, token);
+      toast.success('Source deleted');
+    });
+  }
+
+  async function deleteStory(id: string) {
+    if (!confirm('Delete this discovered story?')) return;
+    await runAction(`del-story-${id}`, async () => {
+      await apiRequest(`/api/ai-news/stories/${id}`, { method: 'DELETE' }, token);
+      toast.success('Story deleted');
+    });
+  }
+
+  async function deleteGenerated(id: string) {
+    if (!confirm('Delete this generated article record?')) return;
+    await runAction(`del-gen-${id}`, async () => {
+      await apiRequest(`/api/ai-news/generated/${id}`, { method: 'DELETE' }, token);
+      toast.success('Generated article deleted');
     });
   }
 
@@ -298,39 +371,99 @@ export default function AiNewsCenterPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        {/* ── News Sources ── */}
         <section className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm xl:col-span-2">
           <div className="mb-4 flex items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-slate-950">News Sources</h2>
             <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">{sources.length} total</span>
           </div>
+
+          {/* Add form */}
           <form onSubmit={handleAddSource} className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-[1fr_1.4fr_160px_90px_auto]">
             <Input placeholder="Source name" value={sourceForm.name} onChange={(event) => setSourceForm({ ...sourceForm, name: event.target.value })} required />
             <Input placeholder="RSS URL" value={sourceForm.url} onChange={(event) => setSourceForm({ ...sourceForm, url: event.target.value })} required />
             <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={sourceForm.defaultCategory} onChange={(event) => setSourceForm({ ...sourceForm, defaultCategory: event.target.value })}>
               {categories.map((category) => <option key={category} value={category}>{category}</option>)}
             </select>
-            <Input type="number" min="1" max="5" value={sourceForm.trustLevel} onChange={(event) => setSourceForm({ ...sourceForm, trustLevel: event.target.value })} />
+            <Input type="number" min="1" max="5" placeholder="Trust" value={sourceForm.trustLevel} onChange={(event) => setSourceForm({ ...sourceForm, trustLevel: event.target.value })} />
             <Button type="submit" disabled={busyAction !== null}>
               <Plus className="mr-2 h-4 w-4" /> Add
             </Button>
           </form>
+
+          {/* Sources list */}
           <div className="overflow-hidden rounded-lg border border-slate-100">
             {sources.map((source) => (
-              <div key={source.id} className="grid grid-cols-1 gap-3 border-b border-slate-100 p-4 last:border-0 lg:grid-cols-[1fr_150px_110px] lg:items-center">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold text-slate-950">{source.name}</p>
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${source.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{source.isActive ? 'Active' : 'Paused'}</span>
+              <div key={source.id} className="border-b border-slate-100 last:border-0">
+                {editingSourceId === source.id ? (
+                  /* ── Inline edit row ── */
+                  <div className="space-y-3 p-4">
+                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_1.4fr_160px_70px]">
+                      <Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} placeholder="Name" />
+                      <Input value={editForm.url} onChange={(e) => setEditForm({ ...editForm, url: e.target.value })} placeholder="RSS URL" />
+                      <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={editForm.defaultCategory} onChange={(e) => setEditForm({ ...editForm, defaultCategory: e.target.value })}>
+                        {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                      <Input type="number" min="1" max="5" value={editForm.trustLevel} onChange={(e) => setEditForm({ ...editForm, trustLevel: e.target.value })} placeholder="Trust" />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={editForm.isActive}
+                          onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })}
+                          className="h-4 w-4 rounded border-slate-300"
+                        />
+                        Active
+                      </label>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={cancelEditSource} disabled={busyAction !== null}>Cancel</Button>
+                        <Button size="sm" className="bg-blue-600 text-white hover:bg-blue-700" onClick={() => saveEditSource(source.id)} disabled={busyAction !== null}>
+                          <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> Save
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                  <p className="mt-1 truncate text-sm text-slate-500">{source.url}</p>
-                </div>
-                <div className="text-sm text-slate-600">{source.defaultCategory || 'Unassigned'}</div>
-                <div className="text-sm text-slate-500">{formatDate(source.lastCheckedAt)}</div>
+                ) : (
+                  /* ── Display row ── */
+                  <div className="grid grid-cols-1 gap-3 p-4 lg:grid-cols-[1fr_150px_110px_auto] lg:items-center">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-semibold text-slate-950">{source.name}</p>
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${source.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{source.isActive ? 'Active' : 'Paused'}</span>
+                      </div>
+                      <p className="mt-1 truncate text-sm text-slate-500">{source.url}</p>
+                    </div>
+                    <div className="text-sm text-slate-600">{source.defaultCategory || 'Unassigned'}</div>
+                    <div className="text-sm text-slate-500">{formatDate(source.lastCheckedAt)}</div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        id={`edit-source-${source.id}`}
+                        onClick={() => startEditSource(source)}
+                        disabled={busyAction !== null}
+                        title="Edit source"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-blue-50 hover:text-blue-600 disabled:opacity-40"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                      <button
+                        id={`delete-source-${source.id}`}
+                        onClick={() => deleteSource(source.id)}
+                        disabled={busyAction !== null}
+                        title="Delete source"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </section>
 
+        {/* ── Settings ── */}
         <section className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <Settings className="h-5 w-5 text-blue-600" />
@@ -382,6 +515,7 @@ export default function AiNewsCenterPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        {/* ── Discovered Stories ── */}
         <section className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-950">Discovered Stories</h2>
@@ -398,18 +532,30 @@ export default function AiNewsCenterPage() {
                 {story.summary && <p className="mt-1 line-clamp-2 text-sm text-slate-600">{story.summary}</p>}
                 <div className="mt-3 flex items-center justify-between gap-3">
                   <a className="truncate text-xs font-semibold text-blue-600" href={story.sourceUrl} target="_blank" rel="noreferrer">Source</a>
-                  <Button size="sm" disabled={busyAction !== null || story.status !== 'new'} onClick={() => runAction(`generate-${story.id}`, async () => {
-                    await apiRequest(`/api/ai-news/stories/${story.id}/generate`, { method: 'POST' }, token);
-                    toast.success('Article generated');
-                  })}>
-                    <Sparkles className="mr-2 h-4 w-4" /> Generate
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" disabled={busyAction !== null || story.status !== 'new'} onClick={() => runAction(`generate-${story.id}`, async () => {
+                      await apiRequest(`/api/ai-news/stories/${story.id}/generate`, { method: 'POST' }, token);
+                      toast.success('Article generated');
+                    })}>
+                      <Sparkles className="mr-2 h-4 w-4" /> Generate
+                    </Button>
+                    <button
+                      id={`delete-story-${story.id}`}
+                      onClick={() => deleteStory(story.id)}
+                      disabled={busyAction !== null}
+                      title="Delete story"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </section>
 
+        {/* ── Generated Articles ── */}
         <section className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-950">Generated Articles</h2>
@@ -427,7 +573,7 @@ export default function AiNewsCenterPage() {
                 {article.excerpt && <p className="mt-1 line-clamp-2 text-sm text-slate-600">{article.excerpt}</p>}
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                   <a className="truncate text-xs font-semibold text-blue-600" href={article.sourceUrl} target="_blank" rel="noreferrer">{article.sourceName}</a>
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
                     <Button size="sm" variant="outline" disabled={busyAction !== null || article.status !== 'generated'} onClick={() => runAction(`review-${article.id}`, async () => {
                       await apiRequest(`/api/ai-news/generated/${article.id}/publish`, { method: 'POST', body: JSON.stringify({ mode: 'manual' }) }, token);
                       toast.success('Sent to pending review');
@@ -440,6 +586,15 @@ export default function AiNewsCenterPage() {
                     })}>
                       <CheckCircle2 className="mr-2 h-4 w-4" /> Publish
                     </Button>
+                    <button
+                      id={`delete-gen-${article.id}`}
+                      onClick={() => deleteGenerated(article.id)}
+                      disabled={busyAction !== null}
+                      title="Delete generated article"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -449,6 +604,7 @@ export default function AiNewsCenterPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        {/* ── Scheduler ── */}
         <section className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <Clock className="h-5 w-5 text-emerald-600" />
@@ -469,6 +625,7 @@ export default function AiNewsCenterPage() {
           </div>
         </section>
 
+        {/* ── Publishing Logs ── */}
         <section className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm xl:col-span-2">
           <div className="mb-4 flex items-center gap-2">
             <FileText className="h-5 w-5 text-slate-700" />
@@ -489,4 +646,3 @@ export default function AiNewsCenterPage() {
     </div>
   );
 }
-
