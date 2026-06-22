@@ -158,6 +158,8 @@ export default function AdminSidebar() {
             );
           })}
         </div>
+      </nav>
+
       {/* Footer */}
       <div className="p-6 border-t border-white/10 relative z-10 bg-gradient-to-r from-[#9966CC]/30 to-[#4169E1]/30">
         <div className="px-4 py-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10">
