@@ -58,6 +58,13 @@ export default function AdsSettingsPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [verificationData, setVerificationData] = useState({
+    web_adsense_snippet: '',
+    mobile_adsense_snippet: '',
+    ads_txt_content: '',
+    app_ads_txt_content: ''
+  });
+  const [savingVerification, setSavingVerification] = useState(false);
   const [newAd, setNewAd] = useState({
     placement_name: '',
     display_name: '',
@@ -110,11 +117,61 @@ export default function AdsSettingsPage() {
           setStats(statsData);
         }
       }
+      
+      // Also load verification settings
+      try {
+        const setRes = await adminApiFetch(`${API_URL}/api/settings?category=ads_verification`, {
+          headers: { 'Content-Type': 'application/json' }
+        }, token);
+        if (setRes.ok) {
+          const setData = await setRes.json();
+          if (setData.success && Array.isArray(setData.data)) {
+            const newVData = { ...verificationData };
+            setData.data.forEach((s: any) => {
+              if (s.key in newVData) {
+                (newVData as any)[s.key] = s.value;
+              }
+            });
+            setVerificationData(newVData);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load verification settings:', err);
+      }
+      
     } catch (err) {
       console.error('Error loading data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const saveVerificationData = async () => {
+    setSavingVerification(true);
+    try {
+      const payload = Object.entries(verificationData).map(([k, v]) => ({
+        key: k,
+        value: v,
+        type: 'string',
+        category: 'ads_verification'
+      }));
+      const response = await adminApiFetch(`${API_URL}/api/settings/bulk`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings: payload }),
+      }, token);
+      if (response.ok) {
+        alert('Verification settings saved successfully!');
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to save verification settings');
+      }
+    } catch (err) {
+      console.error('Error saving verification:', err);
+      alert('Failed to save verification settings');
+    } finally {
+      setSavingVerification(false);
     }
   };
 
@@ -347,16 +404,17 @@ export default function AdsSettingsPage() {
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
             </div>
             <div className="flex gap-2">
-              {(['all', 'homepage', 'article'] as const).map(tab => (
+              {(['all', 'homepage', 'article', 'verification'] as const).map(tab => (
                 <button key={tab} onClick={() => setSelectedTab(tab)}
                   className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     selectedTab === tab
                       ? tab === 'homepage' ? 'bg-purple-600 text-white'
                         : tab === 'article' ? 'bg-orange-600 text-white'
+                        : tab === 'verification' ? 'bg-teal-600 text-white'
                         : 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}>
-                  {tab === 'all' ? 'All Ads' : tab === 'homepage' ? 'Homepage' : 'Article Page'}
+                  {tab === 'all' ? 'All Ads' : tab === 'homepage' ? 'Homepage' : tab === 'article' ? 'Article Page' : 'Verification & txt'}
                 </button>
               ))}
             </div>
@@ -364,7 +422,64 @@ export default function AdsSettingsPage() {
         </div>
 
         <div className="space-y-4">
-          {filteredAds.map((ad) => (
+          {selectedTab === 'verification' ? (
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Ads Verification & txt Files</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Web AdSense Snippet (HTML/Script)</label>
+                    <textarea 
+                      value={verificationData.web_adsense_snippet}
+                      onChange={e => setVerificationData({...verificationData, web_adsense_snippet: e.target.value})}
+                      className="w-full h-32 px-4 py-2 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500"
+                      placeholder="<script async src='https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-...' crossorigin='anonymous'></script>"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">This will be injected into the &lt;head&gt; of the Newsportal Web application.</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">ads.txt Content</label>
+                    <textarea 
+                      value={verificationData.ads_txt_content}
+                      onChange={e => setVerificationData({...verificationData, ads_txt_content: e.target.value})}
+                      className="w-full h-48 px-4 py-2 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500"
+                      placeholder="google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">This will be served at classinnews.com/ads.txt</p>
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Mobile AdSense/AdMob Snippet (HTML/Script)</label>
+                    <textarea 
+                      value={verificationData.mobile_adsense_snippet}
+                      onChange={e => setVerificationData({...verificationData, mobile_adsense_snippet: e.target.value})}
+                      className="w-full h-32 px-4 py-2 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500"
+                      placeholder="Mobile specific verification code if required"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">app-ads.txt Content</label>
+                    <textarea 
+                      value={verificationData.app_ads_txt_content}
+                      onChange={e => setVerificationData({...verificationData, app_ads_txt_content: e.target.value})}
+                      className="w-full h-48 px-4 py-2 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500"
+                      placeholder="google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">This will be served at classinnews.com/app-ads.txt for AdMob verification</p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-8 flex justify-end border-t border-gray-200 pt-6">
+                <button 
+                  onClick={saveVerificationData}
+                  disabled={savingVerification}
+                  className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 flex items-center gap-2">
+                  <Save className="w-5 h-5" /> {savingVerification ? 'Saving...' : 'Save Verification Settings'}
+                </button>
+              </div>
+            </div>
+          ) : filteredAds.map((ad) => (
             <div key={ad.id}
               className={`bg-white rounded-lg shadow overflow-hidden transition-all ${editingAd?.id === ad.id ? 'ring-2 ring-blue-500' : ''}`}>
               <div className="p-6">
@@ -526,7 +641,7 @@ export default function AdsSettingsPage() {
             </div>
           ))}
 
-          {filteredAds.length === 0 && !loading && (
+          {selectedTab !== 'verification' && filteredAds.length === 0 && !loading && (
             <div className="bg-white rounded-lg shadow p-12 text-center">
               <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-700 mb-2">No Ad Placements Found</h3>
