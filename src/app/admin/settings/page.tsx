@@ -3325,11 +3325,28 @@ export default function SystemSettingsPage() {
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
               <Search className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-xl font-bold text-slate-900">Search Engine Optimization</h2>
+            <h2 className="text-xl font-bold text-slate-900">Search Engine & Google Tools</h2>
           </div>
-          <div className="text-center py-12">
-            <Search className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-600 font-medium">SEO settings coming soon...</p>
+          <p className="text-slate-600 mb-6">Configure Google Analytics, Search Console verification, SEO defaults, RSS feed, and sitemap settings in the dedicated Google Build Tools page.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <a href="/admin/settings/google-tools" className="flex items-center gap-4 p-5 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl hover:border-blue-400 hover:shadow-md transition-all group">
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow border border-blue-100 group-hover:shadow-md">
+                <Sparkles className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="font-bold text-slate-900">Google Build Tools</p>
+                <p className="text-sm text-slate-500">Analytics, Search Console, SEO, RSS &amp; Sitemap</p>
+              </div>
+            </a>
+            <a href="/admin/settings/ads" className="flex items-center gap-4 p-5 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl hover:border-green-400 hover:shadow-md transition-all group">
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow border border-green-100 group-hover:shadow-md">
+                <DollarSign className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <p className="font-bold text-slate-900">Ads & Verification</p>
+                <p className="text-sm text-slate-500">AdSense, ads.txt, app-ads.txt</p>
+              </div>
+            </a>
           </div>
         </div>
       )}
