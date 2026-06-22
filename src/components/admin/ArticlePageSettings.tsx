@@ -40,11 +40,11 @@ export default function ArticlePageSettings() {
       if (!res.ok) throw new Error('Failed to fetch settings');
       const data = await res.json();
       
-      const settingsMap = new Map(data.data.map((item: any) => [item.key, item.value]));
+      const settingsMap = new Map<string, string>(data.data.map((item: any) => [String(item.key), String(item.value)]));
       
       if (settingsMap.has('news_flash_tags')) {
         try {
-          setTags(JSON.parse(settingsMap.get('news_flash_tags')));
+          setTags(JSON.parse(settingsMap.get('news_flash_tags') || '[]'));
         } catch {
           setTags(DEFAULT_TAGS);
         }
@@ -52,9 +52,9 @@ export default function ArticlePageSettings() {
         setTags(DEFAULT_TAGS);
       }
       
-      if (settingsMap.has('latest_news_per_view')) setPerView(settingsMap.get('latest_news_per_view'));
-      if (settingsMap.has('trending_topics_auto_delete')) setAutoDelete(settingsMap.get('trending_topics_auto_delete'));
-      if (settingsMap.has('trending_topics_retention_days')) setRetentionDays(settingsMap.get('trending_topics_retention_days'));
+      if (settingsMap.has('latest_news_per_view')) setPerView(settingsMap.get('latest_news_per_view') || '10');
+      if (settingsMap.has('trending_topics_auto_delete')) setAutoDelete(settingsMap.get('trending_topics_auto_delete') || 'false');
+      if (settingsMap.has('trending_topics_retention_days')) setRetentionDays(settingsMap.get('trending_topics_retention_days') || '7');
       
     } catch (err) {
       console.error(err);
