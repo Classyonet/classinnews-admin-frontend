@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import pkg from '../../../package.json';
 import { getApiUrl } from '@/lib/api-config';
 import { adminAuthFetch } from '@/lib/admin-session';
 import { cn } from '@/lib/utils';
@@ -157,13 +158,11 @@ export default function AdminSidebar() {
             );
           })}
         </div>
-      </nav>
-
       {/* Footer */}
       <div className="p-6 border-t border-white/10 relative z-10 bg-gradient-to-r from-[#9966CC]/30 to-[#4169E1]/30">
         <div className="px-4 py-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10">
           <p className="text-xs text-blue-200 text-center font-semibold">
-            ClassyNews Admin v1.0
+            ClassyNews Admin v{pkg.version}
           </p>
           <p className="text-xs text-blue-300/70 text-center mt-1">
             Powered by Innovation

@@ -5,6 +5,9 @@ import { useAuth } from '@/contexts/auth-context';
 import { getApiUrl } from '@/lib/api-config';
 import { settingsAPI } from '@/lib/api';
 import { adminApiFetch } from '@/lib/admin-session';
+import SiteSettings from '@/components/admin/SiteSettings';
+import ArticlePageSettings from '@/components/admin/ArticlePageSettings';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -1739,32 +1742,35 @@ export default function SystemSettingsPage() {
         <p className="text-slate-600 mt-1">Configure and manage your system preferences</p>
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="rounded-2xl bg-white shadow-lg border border-slate-100 overflow-hidden">
-        <div className="flex gap-0 border-b-2 border-slate-100 overflow-x-auto">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-shrink-0 px-6 py-4 font-bold text-sm transition-all duration-300 border-b-4 relative ${
-                  activeTab === tab.id
-                    ? 'border-purple-600 text-purple-600 bg-gradient-to-br from-purple-50 to-pink-50'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
-                </div>
-              </button>
-            );
-          })}
+      <div className="flex flex-col md:flex-row gap-8 items-start">
+        {/* Sidebar Navigation */}
+        <div className="w-full md:w-64 flex-shrink-0 sticky top-24">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-2">
+            <div className="space-y-1">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      activeTab === tab.id
+                        ? 'bg-purple-50 text-purple-700 shadow-sm'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`}
+                  >
+                    <Icon className={`w-5 h-5 ${activeTab === tab.id ? 'text-purple-600' : 'text-slate-400'}`} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* General Settings Tab */}
+        {/* Main Content Area */}
+        <div className="flex-1 min-w-0">
+          {/* General Settings Tab */}
       {activeTab === 'site' && (
         <div className="rounded-2xl bg-white p-6 shadow-xl border border-slate-100">
           {/* General Settings Sub-tabs */}
@@ -1780,14 +1786,14 @@ export default function SystemSettingsPage() {
               Site Settings
             </button>
             <button
-              onClick={() => setSiteSubTab('trending')}
+              onClick={() => setSiteSubTab('article-page')}
               className={`px-4 py-3 font-semibold text-sm transition-all duration-300 border-b-4 ${
-                siteSubTab === 'trending'
+                siteSubTab === 'article-page'
                   ? 'border-purple-600 text-purple-600'
                   : 'border-transparent text-slate-600 hover:text-slate-900'
               }`}
             >
-              Topics Settings
+              Article Page Settings
             </button>
             <button
               onClick={() => window.location.href = '/admin/settings/earnings'}
@@ -2396,46 +2402,10 @@ export default function SystemSettingsPage() {
             </div>
           )}
 
-          {/* Topics Settings Sub-tab Content */}
-          {siteSubTab === 'trending' && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 p-4 rounded-xl bg-purple-50 border border-purple-100">
-                <input
-                  type="checkbox"
-                  id="trending-auto-delete"
-                  checked={settings.trending_topics_auto_delete === 'true'}
-                  onChange={(e) => setSettings({ ...settings, trending_topics_auto_delete: e.target.checked.toString() })}
-                  className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-                />
-                <label htmlFor="trending-auto-delete" className="text-sm font-semibold text-slate-700">
-                  Auto-delete old trending topics
-                </label>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">
-                  Retention Days
-                </label>
-                <Input
-                  type="number"
-                  value={settings.trending_topics_retention_days}
-                  onChange={(e) => setSettings({ ...settings, trending_topics_retention_days: e.target.value })}
-                  min="1"
-                  max="30"
-                  disabled={settings.trending_topics_auto_delete !== 'true'}
-                  className="border-slate-200 focus:border-purple-500 focus:ring-purple-500 disabled:bg-slate-100"
-                />
-                <p className="text-xs text-slate-500 mt-1">
-                  Topics older than {settings.trending_topics_retention_days} day(s) will be deleted
-                </p>
-              </div>
-
-              <div className="pt-4">
-                <Button onClick={() => handleSaveSettings('general')} disabled={savingSettings} className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg shadow-purple-500/30 gap-2 disabled:opacity-60">
-                  <Save className="w-4 h-4" />
-                  Save Settings
-                </Button>
-              </div>
+          {/* Article Page Settings Sub-tab Content */}
+          {siteSubTab === 'article-page' && (
+            <div className="space-y-6">
+              <ArticlePageSettings />
             </div>
           )}
         </div>
@@ -3431,6 +3401,8 @@ export default function SystemSettingsPage() {
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }
