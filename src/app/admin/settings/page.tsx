@@ -47,6 +47,7 @@ import {
   Pilcrow,
   Code2,
   Sparkles,
+  ShieldAlert,
 } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 
@@ -1715,6 +1716,7 @@ export default function SystemSettingsPage() {
     { id: 'theme', label: 'Theme Settings', icon: Palette },
     { id: 'prohibited', label: 'Prohibited Words', icon: Shield },
     { id: 'seo', label: 'Search Engine', icon: Search },
+    { id: 'security', label: 'Security & Firewall', icon: ShieldAlert },
     { id: 'activity', label: 'Activity Logs', icon: Activity },
     { id: 'system', label: 'System Info', icon: Info },
   ];
@@ -3345,6 +3347,29 @@ export default function SystemSettingsPage() {
               <div>
                 <p className="font-bold text-slate-900">Ads & Verification</p>
                 <p className="text-sm text-slate-500">AdSense, ads.txt, app-ads.txt</p>
+              </div>
+            </a>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'security' && (
+        <div className="rounded-2xl bg-white p-6 shadow-xl border border-slate-100">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-lg shadow-red-500/30">
+              <ShieldAlert className="w-5 h-5 text-white" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-900">Security & Firewall</h2>
+          </div>
+          <p className="text-slate-600 mb-6">Monitor recent security events, manage blocked IP addresses, and configure the Web Application Firewall (WAF).</p>
+          <div className="grid grid-cols-1 gap-4 max-w-lg">
+            <a href="/admin/settings/security" className="flex items-center gap-4 p-5 bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 rounded-xl hover:border-red-400 hover:shadow-md transition-all group">
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow border border-red-100 group-hover:shadow-md">
+                <Shield className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <p className="font-bold text-slate-900">Security Command Center</p>
+                <p className="text-sm text-slate-500">View Logs, WAF Rules, Block IPs</p>
               </div>
             </a>
           </div>
