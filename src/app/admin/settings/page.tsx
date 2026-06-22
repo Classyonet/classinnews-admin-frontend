@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { getApiUrl } from '@/lib/api-config';
 import { settingsAPI } from '@/lib/api';
 import { adminApiFetch } from '@/lib/admin-session';
-import SiteSettings from '@/components/admin/SiteSettings';
+
 import ArticlePageSettings from '@/components/admin/ArticlePageSettings';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
