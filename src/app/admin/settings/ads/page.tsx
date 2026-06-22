@@ -53,7 +53,7 @@ export default function AdsSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTab, setSelectedTab] = useState<'all' | 'homepage' | 'article'>('all');
+  const [selectedTab, setSelectedTab] = useState<'all' | 'homepage' | 'article' | 'verification'>('all');
   const [editingAd, setEditingAd] = useState<AdPlacement | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
