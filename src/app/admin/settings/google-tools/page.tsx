@@ -19,6 +19,9 @@ interface GoogleToolsSettings {
   google_publisher_center_url: string;
   default_seo_description: string;
   default_og_image: string;
+  publisher_ga_measurement_id: string;
+  publisher_gtm_container_id: string;
+  publisher_google_site_verification: string;
 }
 
 const DEFAULT_SETTINGS: GoogleToolsSettings = {
@@ -28,6 +31,9 @@ const DEFAULT_SETTINGS: GoogleToolsSettings = {
   google_publisher_center_url: '',
   default_seo_description: '',
   default_og_image: '',
+  publisher_ga_measurement_id: '',
+  publisher_gtm_container_id: '',
+  publisher_google_site_verification: '',
 };
 
 function CopyButton({ text }: { text: string }) {
@@ -194,40 +200,74 @@ export default function GoogleToolsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Google Analytics 4 Measurement ID
-                    </label>
-                    <input
-                      type="text"
-                      value={settings.ga_measurement_id}
-                      onChange={e => setSettings({ ...settings, ga_measurement_id: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="G-XXXXXXXXXX"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Found in Google Analytics → Admin → Data Streams → your stream</p>
+                <div className="space-y-8">
+                  {/* Newsportal Analytics */}
+                  <div className="p-5 border border-gray-100 rounded-lg bg-gray-50/50">
+                    <h3 className="font-semibold text-gray-900 mb-4">Newsportal Site (classinnews.com)</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Newsportal Google Analytics 4 Measurement ID
+                        </label>
+                        <input
+                          type="text"
+                          value={settings.ga_measurement_id}
+                          onChange={e => setSettings({ ...settings, ga_measurement_id: e.target.value })}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="G-XXXXXXXXXX"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Newsportal Google Tag Manager Container ID
+                        </label>
+                        <input
+                          type="text"
+                          value={settings.gtm_container_id}
+                          onChange={e => setSettings({ ...settings, gtm_container_id: e.target.value })}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="GTM-XXXXXXX"
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Google Tag Manager Container ID
-                    </label>
-                    <input
-                      type="text"
-                      value={settings.gtm_container_id}
-                      onChange={e => setSettings({ ...settings, gtm_container_id: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="GTM-XXXXXXX"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Found in Google Tag Manager → your container. Used if you want to manage tags through GTM instead.</p>
+                  {/* Publisher Analytics */}
+                  <div className="p-5 border border-gray-100 rounded-lg bg-gray-50/50">
+                    <h3 className="font-semibold text-gray-900 mb-4">Publisher Portal (publisher.classinnews.com)</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Publisher Google Analytics 4 Measurement ID
+                        </label>
+                        <input
+                          type="text"
+                          value={settings.publisher_ga_measurement_id}
+                          onChange={e => setSettings({ ...settings, publisher_ga_measurement_id: e.target.value })}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="G-XXXXXXXXXX"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Publisher Google Tag Manager Container ID
+                        </label>
+                        <input
+                          type="text"
+                          value={settings.publisher_gtm_container_id}
+                          onChange={e => setSettings({ ...settings, publisher_gtm_container_id: e.target.value })}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="GTM-XXXXXXX"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                     <div className="flex items-start gap-2">
                       <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
                       <p className="text-xs text-blue-700">
-                        <strong>Tip:</strong> Use either GA4 OR GTM — not both. If you use GTM, configure GA4 inside the Tag Manager container instead. Both scripts are injected into the Newsportal automatically once saved.
+                        <strong>Tip:</strong> Use either GA4 OR GTM — not both. If you use GTM, configure GA4 inside the Tag Manager container instead. Both scripts are injected automatically once saved.
                       </p>
                     </div>
                   </div>
@@ -265,21 +305,43 @@ export default function GoogleToolsPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Verification Code (meta tag content value)
-                      </label>
-                      <input
-                        type="text"
-                        value={settings.google_site_verification}
-                        onChange={e => setSettings({ ...settings, google_site_verification: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="e.g. uXnhIeDrxf525zBlM6AI-0Z..."
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        In Google Search Console, choose "HTML tag" method and copy only the content=&quot;...&quot; value here. Already hardcoded: <code className="bg-gray-100 px-1 rounded text-xs">uXnhIeDrxf525zBlM6AI-0ZbeU610PtFY_3ek_BNwvs</code>
-                      </p>
+                  <div className="space-y-8">
+                    <div className="p-5 border border-gray-100 rounded-lg bg-gray-50/50">
+                      <h3 className="font-semibold text-gray-900 mb-4">Newsportal Site (classinnews.com)</h3>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Verification Code (meta tag content value)
+                        </label>
+                        <input
+                          type="text"
+                          value={settings.google_site_verification}
+                          onChange={e => setSettings({ ...settings, google_site_verification: e.target.value })}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="e.g. uXnhIeDrxf525zBlM6AI-0Z..."
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          In Google Search Console, choose "HTML tag" method and copy only the content value here.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-5 border border-gray-100 rounded-lg bg-gray-50/50">
+                      <h3 className="font-semibold text-gray-900 mb-4">Publisher Portal (publisher.classinnews.com)</h3>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Publisher Verification Code (meta tag content value)
+                        </label>
+                        <input
+                          type="text"
+                          value={settings.publisher_google_site_verification}
+                          onChange={e => setSettings({ ...settings, publisher_google_site_verification: e.target.value })}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="e.g. vFxhIeDrxf525zBlM6AI-0Z..."
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Add publisher.classinnews.com to Search Console, choose "HTML tag", and paste the content string here.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -292,12 +354,17 @@ export default function GoogleToolsPage() {
                   <p className="text-sm text-gray-600 mb-4">Submit these URLs in Google Search Console → Sitemaps:</p>
                   <div className="space-y-3">
                     <QuickLinkCard
-                      label="Sitemap XML"
+                      label="Newsportal Sitemap XML"
                       url={`${SITE_URL}/sitemap.xml`}
-                      description="Auto-generated sitemap including all articles, categories and static pages. Refreshes every hour."
+                      description="Includes all articles, categories and static pages. Refreshes every hour."
                     />
                     <QuickLinkCard
-                      label="RSS Feed"
+                      label="Publisher Sitemap XML"
+                      url={`https://publisher.classinnews.com/sitemap.xml`}
+                      description="Includes only the public publisher landing pages (login, register, home)."
+                    />
+                    <QuickLinkCard
+                      label="Newsportal RSS Feed"
                       url={`${SITE_URL}/feed.xml`}
                       description="RSS 2.0 feed for the latest 50 articles. Submit to Google Publisher Center for News indexing."
                     />
